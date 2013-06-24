@@ -1,0 +1,12 @@
+Package: recurrentR
+Type: Package
+Title: Recurrent Event Data Analysis
+Version: 0.1
+Date: 2013-05-07
+Author: Wush Wu
+Maintainer: Wush Wu <wush978@gmail.com>
+Description: 
+License: GPL(>= 3)
+Collate:
+    'recurrent-data.class.R'
+    'Wang2000.R'
