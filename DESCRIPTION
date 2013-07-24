@@ -8,5 +8,3 @@ Maintainer: Wush Wu <wush978@gmail.com>
 Description: 
 License: GPL(>= 3)
 Collate:
-    'recurrent-data.class.R'
-    'Wang2000.R'
