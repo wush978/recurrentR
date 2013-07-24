@@ -1,2 +1,3 @@
+exportClasses("recurrent-data")
 export(gen_homo_poisson)
 export(gen_inhomo_poisson)

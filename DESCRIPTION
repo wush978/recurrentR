@@ -9,3 +9,5 @@ Description:
 License: GPL(>= 3)
 Collate:
     'generator.R'
+    'recurrent-data.class.R'
+    'WQC2001.R'
