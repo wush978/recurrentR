@@ -8,3 +8,4 @@ Maintainer: Wush Wu <wush978@gmail.com>
 Description: 
 License: GPL(>= 3)
 Collate:
+    'generator.R'
