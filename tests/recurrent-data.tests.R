@@ -4,7 +4,7 @@ set.seed(1)
 
 # Data Generation
 
-lambda <- function(x) exp(exp(-x) * sin(x) + 1)
+lambda <- function(x) exp(sin(x))
 T_0 <- rpois(1, 40)
 
 curve(lambda, from=0, to = T_0)
@@ -18,6 +18,7 @@ obj <- new("recurrent-data", iris, y, t, data.frame(), T_0)
 rm(list=c("y", "t", "T_0"), envir=globalenv())
 
 # Estimate WQC2001 Model 1(No covariates)
+
 F.hat <- obj$F.hat
 Lambda.hat <- obj$Lambda.hat
 curve(F.hat, 0, obj@T_0)
@@ -26,8 +27,12 @@ curve(Lambda.hat, 0, obj@T_0)
 curve(lambda, 0, obj@T_0)
 Lambda.single <- function(t) integrate(lambda, 0, t)$value
 Lambda <- function(T_0) {
-	return(function(t) sapply(t, Lambda.single)/Lambda.single(T_0))
+	return(function(t) sapply(t, Lambda.single))
 }
 answer <- Lambda(obj@T_0)
-curve(answer, 0, obj@T_0)
-curve(Lambda.hat, 0, obj@T_0)
+curve(answer, 0, obj@T_0, col=2)
+curve(Lambda.hat, 0, obj@T_0, add=TRUE, lty=1)
+
+# Bootstrap
+
+obj.b <- obj$bootstrap(100)
