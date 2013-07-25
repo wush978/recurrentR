@@ -33,6 +33,9 @@ answer <- Lambda(obj@T_0)
 curve(answer, 0, obj@T_0, col=2)
 curve(Lambda.hat, 0, obj@T_0, add=TRUE, lty=1)
 
-# Bootstrap
+# Bootstrap Estimate
 
-obj.b <- obj$bootstrap(100)
+x.eval <- seq(from=0, to=obj@T_0, length=100)
+obj$F.hat(x.eval, TRUE, error.measurement.function=sd)
+
+obj$F.hat(x.eval, TRUE, error.measurement.function=function(a) c(quantile(a, 0.975), quantile(a, 0.025)))
