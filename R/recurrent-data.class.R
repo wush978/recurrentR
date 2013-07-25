@@ -41,7 +41,8 @@ setMethod(
 	function (x, name) {
 		switch(name,
 			"F.hat" = F.hat(x),
-			"Lambda.hat" = Lambda.hat(x)
+			"Lambda.hat" = Lambda.hat(x),
+			"bootstrap" = gen_bootstrap(x)
 		)
 	}
 )

@@ -11,3 +11,4 @@ Collate:
     'generator.R'
     'recurrent-data.class.R'
     'WQC2001.R'
+    'bootstrap.R'
