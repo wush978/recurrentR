@@ -37,5 +37,16 @@ curve(Lambda.hat, 0, obj@T_0, add=TRUE, lty=1)
 
 x.eval <- seq(from=0, to=obj@T_0, length=100)
 obj$F.hat(x.eval, TRUE, error.measurement.function=sd)
-
 obj$F.hat(x.eval, TRUE, error.measurement.function=function(a) c(quantile(a, 0.975), quantile(a, 0.025)))
+
+result <- obj$Lambda.hat(x.eval, TRUE, error.measurement.function=sd)
+curve(answer, 0,obj@T_0, col=2)
+lines(x.eval, result$estimate, col=1)
+lines(x.eval, result$estimate + 2 * result$error.measurement, lty = 2, col = 1)
+lines(x.eval, result$estimate - 2 * result$error.measurement, lty = 2, col = 1)
+
+result <- obj$Lambda.hat(x.eval, TRUE, error.measurement.function=function(a) c(quantile(a, 0.975), quantile(a, 0.025)))
+curve(answer, 0,obj@T_0, col=2)
+lines(x.eval, result$estimate, col=1)
+lines(x.eval, result$error.measurement[1,], lty = 2, col = 1)
+lines(x.eval, result$error.measurement[2,], lty = 2, col = 1)

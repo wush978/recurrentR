@@ -31,7 +31,7 @@ F.hat <- function(obj) {
 	}
 	retval <- function(t, bootstrap.se = FALSE, B = 100, error.measurement.function = sd) {
 		if (!bootstrap.se) return(sapply(t, function(t) retval.single(t)))
-		estimate <- sapply(t, function(t) retval.single(t))
+		estimate <- obj$F.hat(t)
 		obj.b <- obj$bootstrap(B)
 		F.hat.bootstrap.result <- sapply(obj.b, function(obj) {
 			obj$F.hat(t)
@@ -46,7 +46,14 @@ Lambda.hat <- function(obj, bootstrap.se = FALSE) {
 	F.hat <- obj$F.hat
 	m <- sapply(obj@t, length)
 	Lambda.hat.T_0 <- mean(m / F.hat(obj@y))
-	return(function(t) {
-		Lambda.hat.T_0 * F.hat(t)
+	return(function(t, bootstrap.se = FALSE, B = 100, error.measurement.function = sd) {
+		if (!bootstrap.se) return(Lambda.hat.T_0 * F.hat(t))
+		estimate <- obj$Lambda.hat(t)
+		obj.b <- obj$bootstrap(B)
+		Lambda.hat.bootstrap.result <- sapply(obj.b, function(obj) {
+			obj$Lambda.hat(t)
+		})
+		error.measurement = apply(Lambda.hat.bootstrap.result, 1, error.measurement.function)
+		list(estimate=estimate, error.measurement=error.measurement)
 	})
 }
