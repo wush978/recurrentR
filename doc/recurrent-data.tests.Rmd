@@ -58,3 +58,22 @@ lines(x.eval, result$estimate, col=1)
 lines(x.eval, result$error.measurement[1,], lty = 2, col = 1)
 lines(x.eval, result$error.measurement[2,], lty = 2, col = 1)
 ```
+
+# Generate Data with Covariate
+
+```{r data-generation}
+lambda <- function(x) exp(sin(x))
+X <- model.matrix(~., data=iris)
+beta <- rnorm(ncol(X))
+T_0 <- rpois(1, 40)
+y <- rpois(nrow(iris), T_0)
+y <- as.numeric(ifelse(y < T_0, y, T_0))
+t <- list()
+for(i in seq_along(y)) {
+	lambda_i <- function(x) lambda(x) * exp(X[i,] %*% beta)
+	gen_inhomo_poisson(lambda_i, T_0=T_0, exp(1) * exp(X[i,] %*% beta))
+}
+obj <- new("recurrent-data", X, y, t, data.frame(), T_0)
+rm(list=c("y", "t", "T_0"), envir=globalenv())
+```
+
