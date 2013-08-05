@@ -13,7 +13,7 @@
 setClass(
 	"recurrent-data",
 	representation(
-		X = "data.frame",
+		X = "matrix",
 		y = "numeric",
 		t = "list",
 		W = "data.frame",
