@@ -65,21 +65,29 @@ lines(x.eval, result$error.measurement[2,], lty = 2, col = 1)
 # Generate Data with Covariate
 
 ```{r data-generation-covariate}
+set.seed(1)
 lambda <- function(x) exp(sin(x))
 X <- model.matrix(~., data=iris)
-beta <- rnorm(ncol(X)); beta[0] <- 0
-beta[0] <- - max(X %*% beta)
+beta <- rnorm(ncol(X)); beta[1] <- 0
+beta[1] <- 1 - max(X %*% beta)
 T_0 <- rpois(1, 40)
 y <- rpois(nrow(iris), T_0)
 y <- as.numeric(ifelse(y < T_0, y, T_0))
 t <- list()
+answer <- list()
+gen.lambda_i <- function(i) {
+	z <- rexp(1)
+	return(function(x) lambda(x) * exp(X[i,] %*% beta) * z)
+}
 pb <- txtProgressBar(max = length(y))
 for(i in seq_along(y)) {
-	lambda_i <- function(x) lambda(x) * exp(X[i,] %*% beta)
-	t[[i]] <- gen_inhomo_poisson(lambda_i, T_0=T_0, exp(1) * exp(X[i,] %*% beta))
+	answer[[i]] <- gen.lambda_i(i)
+	gen.sample <- gen_inhomo_poisson(answer[[i]], T_0=T_0, exp(1) * exp(X[i,] %*% beta))
+	if (is.null(gen.sample)) t[[i]] <- vector("numeric", 0) else t[[i]] <- gen.sample
 	setTxtProgressBar(pb, i)
 }
 close(pb)
+sapply(t, length)
 obj <- new("recurrent-data", X, y, t, data.frame(), T_0)
 rm(list=c("y", "t", "T_0"), envir=globalenv())
 ```
@@ -87,6 +95,29 @@ rm(list=c("y", "t", "T_0"), envir=globalenv())
 # Estimate WQC2001 Model 2
 
 ```{r estimate-WQC2001-model-1-bootstrap}
-U.hat <- obj$U.hat
-
+solver <- obj$U.hat
+system.time({
+	U.hat <- solver(bootstrap=TRUE)
+})
+require(plotrix)
+plotCI(1:7, U.hat$estimate, 
+			 ui=U.hat$estimate + 2 * U.hat$error.measurement, 
+			 li=U.hat$estimate - 2 * U.hat$error.measurement,
+			 xlab="", xaxt = 'n', ylab="Cofficients"
+			 )
+# Check if the real coefficients(red points) are inside the confidence intervals
+points(1:7, beta, col=2)
+U.hat <- solver()
+F.hat <- obj$F.hat
+gen.Lambda.hat <- function(x) {
+	function(t) F.hat(t) * exp(U.hat %*% x)
+}
+Lambda.hat.unormalized <- gen.Lambda.hat(obj@X[1,])
+Lambda.hat <- function(t) c(Lambda.hat.unormalized(t)) / Lambda.hat.unormalized(obj@T_0)
+answer.fun.single <- function(t) integrate(answer[[1]], 0, t, subdivisions = ceiling(t * 100))$value
+answer.fun <- function(t) {
+	sapply(t, answer.fun.single) / answer.fun.single(obj@T_0)
+}
+curve(answer.fun, obj@T_0, col=2, main=paste("Normalized Lambda.hat with i =",i))
+curve(Lambda.hat, from = 0, to = obj@T_0, add=TRUE)
 ```
