@@ -1,3 +1,4 @@
 exportClasses("recurrent-data")
+export(eq_solver)
 export(gen_homo_poisson)
 export(gen_inhomo_poisson)

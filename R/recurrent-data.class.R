@@ -17,7 +17,8 @@ setClass(
 		y = "numeric",
 		t = "list",
 		W = "data.frame",
-		T_0 = "numeric"
+		T_0 = "numeric",
+		B = "list"
 	)
 )
 
@@ -30,6 +31,7 @@ setMethod(
 		.Object@t <- t
 		.Object@W <- W
 		.Object@T_0 <- T_0
+		.Object@B <- list()
 		.Object
 	}
 	)
@@ -42,7 +44,8 @@ setMethod(
 		switch(name,
 			"F.hat" = F.hat(x),
 			"Lambda.hat" = Lambda.hat(x),
-			"bootstrap" = gen_bootstrap(x)
+			"bootstrap" = gen_bootstrap(x),
+			"U.hat" = U.hat(x)
 		)
 	}
 )

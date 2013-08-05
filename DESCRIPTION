@@ -7,8 +7,11 @@ Author: Wush Wu
 Maintainer: Wush Wu <wush978@gmail.com>
 Description: 
 License: GPL(>= 3)
+Depends:
+    nleqslv
 Collate:
     'generator.R'
     'recurrent-data.class.R'
     'WQC2001.R'
     'bootstrap.R'
+    'numerical_solver.R'
