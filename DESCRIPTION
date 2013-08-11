@@ -9,6 +9,8 @@ Description:
 License: GPL(>= 3)
 Depends:
     nleqslv
+Suggests:
+    plotrix
 Collate:
     'generator.R'
     'recurrent-data.class.R'

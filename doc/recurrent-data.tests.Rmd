@@ -6,7 +6,8 @@ set.seed(1)
 # Data Generation
 
 ```{r data-generation}
-lambda <- function(x) exp(sin(x))
+# lambda <- function(x) exp(sin(x))
+lambda <- function(x) exp(-x/10)
 T_0 <- rpois(1, 40)
 
 curve(lambda, from=0, to = T_0)
@@ -14,8 +15,12 @@ curve(lambda, from=0, to = T_0)
 y <- rpois(nrow(iris), T_0)
 y <- as.numeric(ifelse(y < T_0, y, T_0))
 t <- sapply(y, function(y) {
+# 	browser()
 	lambda_i <- function(t) exp(rnorm(1)) * lambda(t)
-	as.numeric(ceiling(gen_inhomo_poisson(lambda_i, y - 1, 4)))
+	retval <- gen_inhomo_poisson(lambda_i, y - 1, lambda_i(0))
+	if (is.null(retval)) return(vector("numeric", 0))
+	return(retval)
+# 	return(as.numeric(ceiling(retval)))
 })
 obj <- new("recurrent-data", model.matrix(~.,iris), y, t, data.frame(), T_0)
 rm(list=c("y", "t", "T_0"), envir=globalenv())
@@ -25,12 +30,10 @@ rm(list=c("y", "t", "T_0"), envir=globalenv())
 # Estimate WQC2001 Model 1(No covariates)
 
 ```{r estimate-WQC2001-model-1}
-F.hat <- obj$F.hat
-Lambda.hat <- obj$Lambda.hat
-curve(F.hat, 0, obj@T_0)
-curve(Lambda.hat, 0, obj@T_0)
+curve(obj, type="F.hat")
+curve(obj, type="Lambda.hat")
 
-curve(lambda, 0, obj@T_0)
+# Plot Answers
 Lambda.single <- function(t) integrate(lambda, 0, t)$value
 Lambda.single.T0 <- Lambda.single(obj@T_0)
 Lambda <- function(t) {
@@ -39,34 +42,55 @@ Lambda <- function(t) {
 	})
 }
 curve(Lambda, 0, obj@T_0, col=2)
-curve(F.hat, 0, obj@T_0, add=TRUE, lty=1)
+curve(obj, type="F.hat", add=TRUE)
 ```
 
 # Bootstrap Estimate
 
 ```{r estimate-WQC2001-model-1-bootstrap}
-x.eval <- seq(from=0, to=obj@T_0, length=100)
+# x.eval <- seq(from=0, to=obj@T_0, length=100)
 # obj$F.hat(x.eval, TRUE, error.measurement.function=sd)
 # obj$F.hat(x.eval, TRUE, error.measurement.function=function(a) c(quantile(a, 0.975), quantile(a, 0.025)))
 
-result <- obj$F.hat(x.eval, TRUE, error.measurement.function=sd)
-curve(Lambda, 0,obj@T_0, col=2)
-lines(x.eval, result$estimate, col=1)
-lines(x.eval, result$estimate + 2 * result$error.measurement, lty = 2, col = 1)
-lines(x.eval, result$estimate - 2 * result$error.measurement, lty = 2, col = 1)
+# result <- obj$F.hat(x.eval, TRUE, error.measurement.function=sd)
+# curve(Lambda, 0,obj@T_0, col=2)
+# lines(x.eval, result$estimate, col=1)
+# lines(x.eval, result$estimate + 2 * result$error.measurement, lty = 2, col = 1)
+# lines(x.eval, result$estimate - 2 * result$error.measurement, lty = 2, col = 1)
+system.time({
+	curve(obj, type="F.hat", bootstrap=TRUE, B = 4)
+})
+system.time({
+	curve(obj, type="Lambda.hat", bootstrap=TRUE, B = 4)
+})
 
-result <- obj$F.hat(x.eval, TRUE, error.measurement.function=function(a) c(quantile(a, 0.975), quantile(a, 0.025)))
-curve(Lambda, 0,obj@T_0, col=2)
-lines(x.eval, result$estimate, col=1)
-lines(x.eval, result$error.measurement[1,], lty = 2, col = 1)
-lines(x.eval, result$error.measurement[2,], lty = 2, col = 1)
+# result <- obj$F.hat(x.eval, TRUE, error.measurement.function=function(a) c(quantile(a, 0.975), quantile(a, 0.025)))
+# curve(Lambda, 0,obj@T_0, col=2)
+# lines(x.eval, result$estimate, col=1)
+# lines(x.eval, result$error.measurement[1,], lty = 2, col = 1)
+# lines(x.eval, result$error.measurement[2,], lty = 2, col = 1)
+system.time({
+	curve(obj, type="F.hat", bootstrap=TRUE, error.measurement.function = function(a) c(quantile(a, 0.975), quantile(a, 0.025)), 
+		bootstrap.u = function(result) {
+			result$error.measurement[1,]
+		}, bootstrap.l = function(result) {result$error.measurement[2,]}
+		, B = 4)
+})
+system.time({
+	curve(obj, type="Lambda.hat", bootstrap=TRUE, error.measurement.function = function(a) c(quantile(a, 0.975), quantile(a, 0.025)), 
+		bootstrap.u = function(result) {
+			result$error.measurement[1,]
+		}, bootstrap.l = function(result) {result$error.measurement[2,]}
+		, B = 4)
+})
 ```
 
 # Generate Data with Covariate
 
 ```{r data-generation-covariate}
 set.seed(1)
-lambda <- function(x) exp(sin(x))
+# lambda <- function(x) exp(sin(x))
+lambda <- function(x) exp(-x)
 X <- model.matrix(~., data=iris)
 beta <- rnorm(ncol(X)); beta[1] <- 0
 beta[1] <- 1 - max(X %*% beta)
@@ -94,30 +118,36 @@ rm(list=c("y", "t", "T_0"), envir=globalenv())
 
 # Estimate WQC2001 Model 2
 
-```{r estimate-WQC2001-model-1-bootstrap}
+```{r estimate-WQC2001-model-2-bootstrap}
 solver <- obj$U.hat
 system.time({
 	U.hat <- solver(bootstrap=TRUE)
 })
 require(plotrix)
-plotCI(1:7, U.hat$estimate, 
+ylim <- c(
+	min(U.hat$estimate - 2 * U.hat$error.measurement, beta),
+	max(U.hat$estimate + 2 * U.hat$error.measurement, beta)
+)
+g <- plotCI(1:7, U.hat$estimate, 
 			 ui=U.hat$estimate + 2 * U.hat$error.measurement, 
 			 li=U.hat$estimate - 2 * U.hat$error.measurement,
-			 xlab="", xaxt = 'n', ylab="Cofficients"
+			 xlab="", xaxt = 'n', ylab="Cofficients", ylim = ylim
 			 )
 # Check if the real coefficients(red points) are inside the confidence intervals
 points(1:7, beta, col=2)
-U.hat <- solver()
-F.hat <- obj$F.hat
-gen.Lambda.hat <- function(x) {
-	function(t) F.hat(t) * exp(U.hat %*% x)
-}
-Lambda.hat.unormalized <- gen.Lambda.hat(obj@X[1,])
-Lambda.hat <- function(t) c(Lambda.hat.unormalized(t)) / Lambda.hat.unormalized(obj@T_0)
-answer.fun.single <- function(t) integrate(answer[[1]], 0, t, subdivisions = ceiling(t * 100))$value
-answer.fun <- function(t) {
-	sapply(t, answer.fun.single) / answer.fun.single(obj@T_0)
-}
-curve(answer.fun, obj@T_0, col=2, main=paste("Normalized Lambda.hat with i =",i))
-curve(Lambda.hat, from = 0, to = obj@T_0, add=TRUE)
+# plot(obj, type="U.hat")
+
+# U.hat <- solver()
+# F.hat <- obj$F.hat
+# gen.Lambda.hat <- function(x) {
+# 	function(t) F.hat(t) * exp(U.hat %*% x)
+# }
+# Lambda.hat.unormalized <- gen.Lambda.hat(obj@X[1,])
+# Lambda.hat <- function(t) c(Lambda.hat.unormalized(t)) / Lambda.hat.unormalized(obj@T_0)
+# answer.fun.single <- function(t) integrate(answer[[1]], 0, t, subdivisions = ceiling(t * 100))$value
+# answer.fun <- function(t) {
+# 	sapply(t, answer.fun.single) / answer.fun.single(obj@T_0)
+# }
+# curve(answer.fun, obj@T_0, col=2, main=paste("Normalized Lambda.hat with i =",i))
+# curve(Lambda.hat, from = 0, to = obj@T_0, add=TRUE)
 ```

@@ -49,3 +49,65 @@ setMethod(
 		)
 	}
 )
+
+#'@exportMethod curve
+setMethod("curve",
+					signature(expr = "recurrent-data"),
+					function (expr, from = NULL, to = NULL, n = 101, add = FALSE, 
+										type = c("F.hat", "Lambda.hat"), xname = "x", xlab = xname, ylab = NULL, log = NULL, 
+										xlim = NULL, bootstrap = FALSE, B = 100, error.measurement.function = stats::sd, 
+										bootstrap.lty = 2, bootstrap.col = 1, bootstrap.u = function(result) {
+											result$estimate + 2 * result$error.measurement	
+										}, bootstrap.l = function(result) { 
+											result$estimate - 2 * result$error.measurement
+										}, ...) 
+					{
+						if (is.null(from)) from <- 0
+						if (is.null(to)) to <- expr@T_0
+						switch(type, 
+							"F.hat" = {
+								F.hat <- expr$F.hat
+								curve(F.hat, from, to, n, add, type="l", xname = xname, xlab = xlab, ylab = ylab, 
+									log = log, xlim = xlim, ...)
+								if (bootstrap) {
+									x.eval <- seq(from, to, length.out=n)
+									result <- expr$F.hat(x.eval, bootstrap, B=B, error.measurement.function=error.measurement.function)
+									lines(x.eval, bootstrap.u(result), lty = bootstrap.lty, col = bootstrap.col)
+									lines(x.eval, bootstrap.l(result), lty = bootstrap.lty, col = bootstrap.col)
+								}
+							},
+							"Lambda.hat" = {
+								Lambda.hat <- expr$Lambda.hat
+								curve(Lambda.hat, from, to, n, add, type="l", xname = xname, xlab = xlab, ylab = ylab, 
+									log = log, xlim = xlim, ...)
+								if (bootstrap) {
+									x.eval <- seq(from, to, length.out=n)
+									result <- expr$Lambda.hat(x.eval, bootstrap, B=B, error.measurement.function=error.measurement.function)
+									lines(x.eval, bootstrap.u(result), lty = bootstrap.lty, col = bootstrap.col)
+									lines(x.eval, bootstrap.l(result), lty = bootstrap.lty, col = bootstrap.col)
+								}
+							}
+						)
+					}
+)
+
+# #'@exportMethod plot
+# setMethod("plot",
+# 					signature(x = "recurrent-data"),
+# 					function (x, y, type=c("U.hat"), bootstrap = FALSE, B = 100, error.measurement.function = stats::sd, 
+# 										bootstrap.lty = 2, bootstrap.col = 1, bootstrap.u = function(result) {
+# 											result$estimate + 2 * result$error.measurement	
+# 										}, bootstrap.l = function(result) { 
+# 											result$estimate - 2 * result$error.measurement
+# 										}, tol = 1e-04, ...) 
+# 					{
+# 						browser()
+# 						solver <- x$U.hat
+# 						U.hat <- solver(bootstrap=bootstrap, B=B, error.measurement.function=error.measurement.function, tol=tol)
+# 						if (bootstrap) {
+# 						}	else {
+# 							names(U.hat) <- colnames(obj@X)
+# 							
+# 						}
+# 					}
+# )
