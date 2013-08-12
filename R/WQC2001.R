@@ -45,7 +45,7 @@ F.hat <- function(obj) {
 Lambda.hat <- function(obj, bootstrap = FALSE) {
 	F.hat <- obj$F.hat
 	m <- sapply(obj@t, length)
-	Lambda.hat.T_0 <- mean(m / F.hat(obj@y))
+	Lambda.hat.T_0 <- mean(m / F.hat(obj@y)) # TODO: ill condition checking
 	return(function(t, bootstrap = FALSE, B = 100, error.measurement.function = base::sd) {
 		if (!bootstrap) return(Lambda.hat.T_0 * F.hat(t))
 		estimate <- obj$Lambda.hat(t)
