@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+
+man
+NAMESPACE
+
+doc/*.md
+doc/*.html
