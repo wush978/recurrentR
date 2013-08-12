@@ -2,35 +2,36 @@ s <- function(obj) {
 	sort(unique(unlist(sapply(obj@t, unique))))
 }
 
-d.single <- function(obj, s) {
-	sum(sapply(obj@t, function(t) {
-		sum(t == s)
-	}))
+# d.single <- function(obj, s) {
+# 	sum(sapply(obj@t, function(t) {
+# 		sum(t == s)
+# 	}))
+# }
+
+d <- function(obj) {
+# 	sapply(s, function(s) d.single(obj, s))
+	as.vector(table(unlist(obj@t)))
 }
 
-d <- function(obj, s) {
-	sapply(s, function(s) d.single(obj, s))
-}
+# N.single <- function(obj, s) {
+# 	sum((obj@y >= s) * sapply(obj@t, function(t) {
+# 		sum(t <= s)
+# 	}))
+# }
 
-N.single <- function(obj, s) {
-	sum((obj@y >= s) * sapply(obj@t, function(t) {
-		sum(t <= s)
-	}))
-}
-
-N <- function(obj, s) {
-	sapply(s, function(s) N.single(obj, s))
-}
+# N <- function(obj) {
+# 	cumsum(d(obj))
+# }
 
 F.hat <- function(obj) {
 	s <- s(obj)
-	d <- d(obj, s)
-	N <- N(obj, s)
-	retval.single <- function(t) {
-		prod(ifelse(s > t, 1 - d/N, 1))
-	}
+	d <- d(obj)
+	N <- cumsum(d)
+	x <- s
+	y <- append(rev(cumprod(rev(1 - d/N))), 1)
+	f <- stepfun(x, y)
 	retval <- function(t, bootstrap = FALSE, B = 100, error.measurement.function = base::sd) {
-		if (!bootstrap) return(sapply(t, function(t) retval.single(t)))
+		if (!bootstrap) return(f(t))
 		estimate <- obj$F.hat(t)
 		obj.b <- obj$bootstrap(B)
 		F.hat.bootstrap.result <- sapply(obj.b, function(obj) {
@@ -115,4 +116,8 @@ U.hat <- function(obj) {
 		error.measurement = apply(U.hat.bootstrap.result, 1, error.measurement.function)
 		list(estimate=estimate, error.measurement=error.measurement)
 	}
+}
+
+Q.hat <- function(obj) {
+	
 }
