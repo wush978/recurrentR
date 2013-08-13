@@ -125,6 +125,12 @@ Q.hat <- function(obj) {
 	return(f)
 }
 
+Q.hat.c <- function(obj) {
+	s <- s(obj)
+	y <- sapply(c(0, s), function(u) mean(sapply(obj@t, function(t) sum(t <= u))))
+	new(StepFunction, s, y)
+}
+
 R.hat <- function(obj) {
 	s <- s(obj)
 	y <- sapply(c(0, s), function(u) mean(sapply(1:length(obj@t), function(i) {
@@ -132,6 +138,14 @@ R.hat <- function(obj) {
 	})))
 	f <- stepfun(s, y)
 	return(f)
+}
+
+R.hat.c <- function(obj) {
+	s <- s(obj)
+	y <- sapply(c(0, s), function(u) mean(sapply(1:length(obj@t), function(i) {
+		sum(obj@t[[i]] <= u & u <= obj@y[i])
+	})))
+	new(StepFunction, s, y)	
 }
 
 b.hat <- function(obj, i) {
@@ -146,5 +160,20 @@ b.hat <- function(obj, i) {
 	}
 	function(t) {
 		step_integrate(k, Q.hat(obj), t, obj@T_0) - sum(as.numeric(t < obj@t[[i]]) / R.t)
+	}
+}
+
+
+
+b.hat.c <- function(obj, i) {
+	R <- R.hat.c(obj)
+	R.t <- R$sort_call(obj@t[[i]])
+	x <- c(obj@t[[i]], obj@y[i])
+	y <- append(0:length(obj@t[[i]]), 0)
+	k.numerator <- new(StepFunction, x, y)
+	Q <- Q.hat.c(obj)
+	k <- k.numerator / R^2
+	function(t) {
+		step_integrate.StepFunction(k, Q, t, obj@T_0) - sum(as.numeric(t < obj@t[[i]]) / R.t)
 	}
 }

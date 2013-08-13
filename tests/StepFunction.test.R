@@ -15,5 +15,7 @@ for(i in 0:11) {
 
 x <- 0:11
 stopifnot(f1$sort_call( x ) == f2(x))
-
+f1$sort_call(x)^2
+f1$sort_call(x)/2
+(f1^2)$sort_call(x)
 stopifnot((f1^2)$sort_call( x ) == f1$sort_call( x )^2)
