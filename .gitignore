@@ -6,4 +6,5 @@ man
 NAMESPACE
 
 doc/*.md
+doc/figure
 doc/*.html

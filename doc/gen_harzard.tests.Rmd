@@ -51,12 +51,11 @@ H(t) = \int_0^th(u)du = h_0 \sum_{l=0}^m g_l \int_0^t I_l(u)du \\\\
 S(t) = \exp\left[-H(t)\right] = \exp\left[-h_0 \sum_{l=0}^m g_l \int_0^t I_l(u)du\right]
 $$
 
-```{r}
-# prepare the simulation
-set.seed(3456998)
 
-# picece-wise constatnt baseline hazard 
-gen_pw_hazard <- function(h.base, h.rel, time.pts, N=1) {
+picece-wise constatnt baseline hazard `gen_pw_harzard(...)`
+
+```{r}
+gen_pw_hazard <- function(h.base, h.rel, time.pts, N=1, s.value=FALSE) {
 
   # TODO: throw error if only 1 time point
   delta_ts = time.pts[2:length(time.pts)] - time.pts[1:length(time.pts)-1]
@@ -64,19 +63,40 @@ gen_pw_hazard <- function(h.base, h.rel, time.pts, N=1) {
   LS <- log(1-runif(N))  # make N patients
   
   # determine ln(S) for all time.pts
-  LSM <- -h0 * c(0, cumsum(h.rel * delta_ts))
+  LSM <- -h.base * c(0, cumsum(h.rel * delta_ts))
   
-  # find the propriate time interval
+  # verify in the propriate time interval
   result <- rep(NA, N)
   for (i in 1:length(h.rel)) {
-    result <- ifelse(LSM[i] >= LS & LS > LSM[i+1], time.pts[i] + (LSM[i] - LS)/h0/h.rel[i], result)               
+    result <- ifelse(LSM[i] >= LS & LS > LSM[i+1], time.pts[i] + (LSM[i] - LS)/h.base/h.rel[i], result)               
   }
-  result
+  if (s.value)
+    cbind(LS, result)
+  else
+    result
 }
+```
 
+```{r}
 N <- 10  # set the start population size for both groups
 hazard.base <- exp(-4)  # set the absolute risk, h0
-hazard.relative <- c(1, 1.01, 0.381, 0.151)  # set the relative risks
-time.pts <- c(0, 1, 4.33, 26, 52)  # set the time points
-gen_pw_hazard(h.base=hazard.base, h.rel=hazard.relative, time.pts=time.pts)
+hazard.relative <- c(1, 1.1, 0.381, 0.151)  # set the relative risks
+time.pts <- c(0, 5, 20, 30, 50)  # set the time points
+```
+
+the given piecewise relative hazard function:
+
+```{r, echo=FALSE}
+plot(stepfun(time.pts[-length(time.pts)], c(0, hazard.relative), f=0), 
+     xlim=range(time.pts), xlab='time t', ylab='relative hazard g',
+     main='')
+```
+
+```{r}
+set.seed(7)
+gen_pw_hazard(h.base=hazard.base, h.rel=hazard.relative, 
+              time.pts=time.pts, N=N)
+set.seed(7)
+gen_pw_hazard(h.base=hazard.base, h.rel=hazard.relative, 
+              time.pts=time.pts, N=N, s.value=TRUE)
 ```
