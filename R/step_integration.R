@@ -1,7 +1,7 @@
 #'@title Integration on step function
 #'
-#'@param g Integrated function of the integral
-#'@param f Step function
+#'@param g Function, the integrand
+#'@param f Step function, the integrator
 #'@param a Numeric value
 #'@param b Numeric value
 #'
@@ -18,5 +18,6 @@ step_integrate <- function(g, f, a, b) {
 	y <- c(e[["f"]], e[["y"]])
 	p <- diff(y)
 	index <- which(x >= a & x <= b)
+	if (length(index) == 0) return(0)
 	sum(g(x[index]) * p[index])
 }
