@@ -8,7 +8,10 @@ Maintainer: Wush Wu <wush978@gmail.com>
 Description: 
 License: GPL(>= 3)
 Depends:
-    nleqslv
+    nleqslv,
+    Rcpp(>= 0.10.4)
+LinkingTo: Rcpp
+RcppModules: recurrentR
 Suggests:
     plotrix
 Collate:
@@ -18,3 +21,5 @@ Collate:
     'bootstrap.R'
     'numerical_solver.R'
     'step_integration.R'
+    'RcppExports.R'
+    'zzz.R'

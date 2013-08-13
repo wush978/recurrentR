@@ -58,10 +58,10 @@ curve(obj, type="F.hat", add=TRUE)
 # lines(x.eval, result$estimate + 2 * result$error.measurement, lty = 2, col = 1)
 # lines(x.eval, result$estimate - 2 * result$error.measurement, lty = 2, col = 1)
 system.time({
-	curve(obj, type="F.hat", bootstrap=TRUE, B = 4, add=TRUE)
+	curve(obj, type="F.hat", bootstrap=TRUE, add=TRUE)
 })
 system.time({
-	curve(obj, type="Lambda.hat", bootstrap=TRUE, B = 4)
+	curve(obj, type="Lambda.hat", bootstrap=TRUE)
 })
 
 # result <- obj$F.hat(x.eval, TRUE, error.measurement.function=function(a) c(quantile(a, 0.975), quantile(a, 0.025)))
