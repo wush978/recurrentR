@@ -20,17 +20,31 @@ struct StepFunction {
 		return y[i - x.begin()];
 	}
 	
+	SEXP sort_call(NumericVector input) {
+		NumVec::const_iterator i = x.begin();
+		NumericVector retval(input.size());
+		for(int j = 0;j < input.size();j++) {
+			while(*i <= input[j] & i != x.end()) { i++; }
+			retval[j] = y[i - x.begin()];
+		}
+		return retval;
+	}
+	
 private:
 	StepFunction(const StepFunction&);
 	void operator=(const StepFunction&);
 };
 
-//'@export StepFunction
+//double step_integrate
+
 RCPP_MODULE(recurrentR) {
 	
 	class_<StepFunction>("StepFunction")
 	.constructor<NumericVector, NumericVector>()
+	.field_readonly("x", &StepFunction::x)
+	.field_readonly("y", &StepFunction::y)
 	.method("call", &StepFunction::call)
+	.method("sort_call", &StepFunction::sort_call)
 	;
 	
 }

@@ -8,6 +8,7 @@ Maintainer: Wush Wu <wush978@gmail.com>
 Description: 
 License: GPL(>= 3)
 Depends:
+    methods,
     nleqslv,
     Rcpp(>= 0.10.4)
 LinkingTo: Rcpp
@@ -23,3 +24,4 @@ Collate:
     'step_integration.R'
     'RcppExports.R'
     'zzz.R'
+    'StepFunction.methods.R'
