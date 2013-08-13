@@ -127,11 +127,24 @@ Q.hat <- function(obj) {
 
 R.hat <- function(obj) {
 	s <- s(obj)
-	y <- sapply(c(0, s), function(u) mean(sapply(1:length(obj@t), function(i) sum(obj@t[[i]] <= u & u <= obj@y[i]))))
+	y <- sapply(c(0, s), function(u) mean(sapply(1:length(obj@t), function(i) {
+		sum(obj@t[[i]] <= u & u <= obj@y[i])
+	})))
 	f <- stepfun(s, y)
 	return(f)
 }
 
 b.hat <- function(obj, i) {
-	
+	R <- R.hat(obj)
+	R.t <- R(obj@t[[i]])
+	k.single <- function(u) {
+		if (u > obj@y[i]) return(0)
+		sum(obj@t[[i]] <= u) / R(u)^2		
+	}
+	k <- function(u) {
+		sapply(u, k.single)
+	}
+	function(t) {
+		step_integrate(k, Q.hat(obj), t, obj@T_0) - sum(as.numeric(t < obj@t[[i]]) / R.t)
+	}
 }
