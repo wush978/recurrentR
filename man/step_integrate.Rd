@@ -5,9 +5,9 @@
   step_integrate(g, f, a, b)
 }
 \arguments{
-  \item{g}{Integrated function of the integral}
+  \item{g}{Function, the integrand}
 
-  \item{f}{Step function}
+  \item{f}{Step function, the integrator}
 
   \item{a}{Numeric value}
 
