@@ -1,0 +1,82 @@
+<!-- better looking
+options(rstudio.markdownToHTML = 
+  function(inputFile, outputFile) {      
+    require(markdown)
+    markdownToHTML(inputFile, outputFile, 
+  stylesheet='combined.css'
+    )
+  }
+) 
+# pandoc -f markdown -sS --mathjax --toc -c ~/.vim/shareboard/css/combined.css -o WQC2001.html WQC2001.md
+# --- using pandoc to output HTML --- #
+# One can use either '--webtex' or '--mathjax' for preview
+options(rstudio.markdownToHTML = 
+  function(inputFile, outputFile) {      
+    system(paste("pandoc", shQuote(inputFile), "--mathjax", "--toc -sS", "-c", "combined.css", "-o", shQuote(outputFile)))
+  }
+)
+-->
+
+
+# Data Generator Given by hazard Funciton
+
+## Piecewise constant hazard function
+
+Reference: <http://www.demogr.mpg.de/papers/technicalreports/tr-2010-003.pdf>
+
+* a set of time points $0 = \tau_0 < \tau_1 < \ldots < \tau_m < \tau_{m+1}$
+* baseline hazard $h_0$
+* relative hazard in $[\tau_l,\tau_{l+1}]$  
+  $g_0 = 1, g_1, \ldots, g_{m-1}, g_m$
+
+define a piecewise constant hazard function
+
+$$
+h(t) = h_0\sum_{l=0}^m g_l I_l(t) \\\\
+$$
+
+with indicator functions: $I_1, \ldots, I_l, \ldots, I_m$
+
+$$
+I_l(t) = \cases{
+  1 & \text{if } \tau_l \leq t \lt \tau_{l+1} \\\\
+  0 & \text{if elsewhere}
+}
+$$
+
+Thus the cumulative hazard $H(t)$
+
+$$
+H(t) = \int_0^th(u)du = h_0 \sum_{l=0}^m g_l \int_0^t I_l(u)du \\\\
+S(t) = \exp\left[-H(t)\right] = \exp\left[-h_0 \sum_{l=0}^m g_l \int_0^t I_l(u)du\right]
+$$
+
+```{r}
+# prepare the simulation
+set.seed(3456998)
+
+# picece-wise constatnt baseline hazard 
+gen_pw_hazard <- function(h.base, h.rel, time.pts, N=1) {
+
+  # TODO: throw error if only 1 time point
+  delta_ts = time.pts[2:length(time.pts)] - time.pts[1:length(time.pts)-1]
+
+  LS <- log(1-runif(N))  # make N patients
+  
+  # determine ln(S) for all time.pts
+  LSM <- -h0 * c(0, cumsum(h.rel * delta_ts))
+  
+  # find the propriate time interval
+  result <- rep(NA, N)
+  for (i in 1:length(h.rel)) {
+    result <- ifelse(LSM[i] >= LS & LS > LSM[i+1], time.pts[i] + (LSM[i] - LS)/h0/h.rel[i], result)               
+  }
+  result
+}
+
+N <- 10  # set the start population size for both groups
+hazard.base <- exp(-4)  # set the absolute risk, h0
+hazard.relative <- c(1, 1.01, 0.381, 0.151)  # set the relative risks
+time.pts <- c(0, 1, 4.33, 26, 52)  # set the time points
+gen_pw_hazard(h.base=hazard.base, h.rel=hazard.relative, time.pts=time.pts)
+```
