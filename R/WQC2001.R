@@ -119,5 +119,19 @@ U.hat <- function(obj) {
 }
 
 Q.hat <- function(obj) {
+	s <- s(obj)
+	y <- sapply(c(0, s), function(u) mean(sapply(obj@t, function(t) sum(t <= u))))
+	f <- stepfun(s, y)
+	return(f)
+}
+
+R.hat <- function(obj) {
+	s <- s(obj)
+	y <- sapply(c(0, s), function(u) mean(sapply(1:length(obj@t), function(i) sum(obj@t[[i]] <= u & u <= obj@y[i]))))
+	f <- stepfun(s, y)
+	return(f)
+}
+
+b.hat <- function(obj, i) {
 	
 }

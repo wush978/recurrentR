@@ -17,3 +17,4 @@ Collate:
     'WQC2001.R'
     'bootstrap.R'
     'numerical_solver.R'
+    'step_integration.R'
