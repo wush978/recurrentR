@@ -1,22 +1,3 @@
-#'@title Generate Homogeneous Poisson Process
-#'
-#'@param lambda, numeric value.
-#'@param T_0, positive numeric value.
-#'
-#'@description Generate a homogeneous poisson process with constant intensity \code{lambda} 
-#'in time interval \code{[0,T_0]}.
-#'
-#'@export
-gen_homo_poisson <- function(lambda, T_0) {
-	result <- c()
-	t <- 0
-	while(t <= T_0) {
-		u <- runif(1)
-		t <- t - log(u) / lambda
-		if (t <= T_0) result <- append(result, t)
-	}
-	result
-}
 
 
 #'@title Generate Inhomogeneous Poisson Process

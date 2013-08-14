@@ -22,6 +22,22 @@ BEGIN_RCPP
     return __sexp_result;
 END_RCPP
 }
+// gen_homo_poisson
+SEXP gen_homo_poisson(double lambda, double T_0);
+RcppExport SEXP recurrentR_gen_homo_poisson(SEXP lambdaSEXP, SEXP T_0SEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        double lambda = Rcpp::as<double >(lambdaSEXP);
+        double T_0 = Rcpp::as<double >(T_0SEXP);
+        SEXP __result = gen_homo_poisson(lambda, T_0);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
 // step_integrate_kernel
 SEXP step_integrate_kernel(Function g, NumericVector x, NumericVector p, double a, double b);
 RcppExport SEXP recurrentR_step_integrate_kernel(SEXP gSEXP, SEXP xSEXP, SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {

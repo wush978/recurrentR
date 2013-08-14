@@ -5,9 +5,9 @@
   gen_homo_poisson(lambda, T_0)
 }
 \arguments{
-  \item{lambda,}{numeric value.}
+  \item{lambda}{Numeric value, the intensity.}
 
-  \item{T_0,}{positive numeric value.}
+  \item{T_0}{Positive numeric value, the upper bound.}
 }
 \description{
   Generate a homogeneous poisson process with constant
