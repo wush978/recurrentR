@@ -27,6 +27,9 @@ F.hat <- function(obj) {
 	s <- s(obj)
 	d <- d(obj)
 	N <- cumsum(d)
+	y.i <- order(y)
+	m <- sapply(obj@t, length)
+	N <- N + eval_N(s, y[y.i], m[y.i])
 	x <- s
 	y <- append(rev(cumprod(rev(1 - d/N))), 1)
 	f <- stepfun(x, y)

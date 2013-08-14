@@ -5,6 +5,23 @@
 
 using namespace Rcpp;
 
+// eval_N
+SEXP eval_N(NumericVector s, NumericVector y, IntegerVector m);
+RcppExport SEXP recurrentR_eval_N(SEXP sSEXP, SEXP ySEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        NumericVector s = Rcpp::as<NumericVector >(sSEXP);
+        NumericVector y = Rcpp::as<NumericVector >(ySEXP);
+        IntegerVector m = Rcpp::as<IntegerVector >(mSEXP);
+        SEXP __result = eval_N(s, y, m);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
 // step_integrate_kernel
 SEXP step_integrate_kernel(Function g, NumericVector x, NumericVector p, double a, double b);
 RcppExport SEXP recurrentR_step_integrate_kernel(SEXP gSEXP, SEXP xSEXP, SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
