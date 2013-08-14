@@ -33,7 +33,7 @@ F.hat <- function(obj) {
 	x <- s
 	y <- append(rev(cumprod(rev(1 - d/N))), 1)
 	f <- stepfun(x, y)
-	retval <- function(t, bootstrap = FALSE, B = 100, error.measurement.function = base::sd) {
+	retval <- function(t, bootstrap = FALSE, B = 100, error.measurement.function = stats::sd) {
 		if (!bootstrap) return(f(t))
 		estimate <- obj$F.hat(t)
 		obj.b <- obj$bootstrap(B)
@@ -50,7 +50,7 @@ Lambda.hat <- function(obj, bootstrap = FALSE) {
 	F.hat <- obj$F.hat
 	m <- sapply(obj@t, length)
 	Lambda.hat.T_0 <- mean(m / F.hat(obj@y)) # TODO: ill condition checking
-	return(function(t, bootstrap = FALSE, B = 100, error.measurement.function = base::sd) {
+	return(function(t, bootstrap = FALSE, B = 100, error.measurement.function = stats::sd) {
 		if (!bootstrap) return(Lambda.hat.T_0 * F.hat(t))
 		estimate <- obj$Lambda.hat(t)
 		obj.b <- obj$bootstrap(B)
@@ -103,7 +103,7 @@ sapply_pb <- function(X, FUN, ...)
 
 
 U.hat <- function(obj) {
-	function(bootstrap = FALSE, B = 100, error.measurement.function = sd, tol=1e-4) {
+	function(bootstrap = FALSE, B = 100, error.measurement.function = stats::sd, tol=1e-4) {
 		m <- sapply(obj@t, length)
 		y <- obj@y
 		F.hat <- obj$F.hat
@@ -166,17 +166,58 @@ b.hat <- function(obj, i) {
 	}
 }
 
-
-
-b.hat.c <- function(obj, i) {
+b.hat.gen <- function(obj) {
 	R <- R.hat.c(obj)
-	R.t <- R$sort_call(obj@t[[i]])
-	x <- c(obj@t[[i]], obj@y[i])
-	y <- append(0:length(obj@t[[i]]), 0)
-	k.numerator <- new(StepFunction, x, y)
 	Q <- Q.hat.c(obj)
-	k <- k.numerator / R^2
-	function(t) {
-		step_integrate.StepFunction(k, Q, t, obj@T_0) - sum(as.numeric(t < obj@t[[i]]) / R.t)
+	return(function(i) {
+		R.t <- R$sort_call(obj@t[[i]])
+		x <- c(obj@t[[i]], obj@y[i])
+		y <- append(0:length(obj@t[[i]]), 0)
+		k.numerator <- new(StepFunction, x, y)
+		k <- k.numerator / R^2
+		function(t) {
+			step_integrate.StepFunction(k, Q, t, obj@T_0) - sum(as.numeric(t < obj@t[[i]]) / R.t)
+		}
+	})
+}
+
+
+c.hat.gen <- function(obj, F.hat = NULL, bi.gen = NULL) {
+	m <- sapply(obj@t, length)
+	if (is.null(bi.gen)) bi.gen <- b.hat.gen(obj)
+	if (is.null(F.hat)) F.hat <- obj$F.hat
+	return(function(i) {
+		bi <- bi.gen(i)
+		mean(sapply(obj@y, function(y) bi(y)) * m / F.hat(obj@y))
+	})	
+}
+
+d.hat.gen <- function(obj, F.hat = NULL, Lambda.hat = NULL, bi.gen = NULL, ci.gen = NULL) {
+	if (is.null(F.hat)) F.hat <- obj$F.hat
+	if (is.null(Lambda.hat)) Lambda.hat <- obj$Lambda.hat
+	if (is.null(bi.gen)) bi.gen <- b.hat.gen(obj)
+	if (is.null(ci.gen)) ci.gen <- c.hat.gen(obj, F.hat = F.hat, bi.gen = bi.gen)
+	return(function(i) {
+		bi <- bi.gen(i)
+		ci <- ci.gen(i)
+		return(function(t) {
+			F.hat(t) * (ci + Lambda.hat(obj@T_0) * bi(t))
+		})
+	})
+}
+
+#'@export
+a.var.hat <- function(obj) {
+	F.hat <- obj$F.hat
+	b.hat.gen <- recurrentR:::b.hat.gen(obj)
+	c.hat.gen <- recurrentR:::c.hat.gen(obj, F.hat=F.hat, b.hat.gen)
+	d.hat.gen <- recurrentR:::d.hat.gen(obj, F.hat=F.hat, bi.gen=b.hat.gen, ci.gen=c.hat.gen)
+	d <- list()
+	for(i in seq_along(obj@y)) {
+		d[[i]] <- d.hat.gen(i)
 	}
+	n <- length(obj@y)
+	return(function(t) {
+		mean(sapply(1:n, function(i) d[[i]](t))^2)
+	})
 }

@@ -1,3 +1,4 @@
+export(a.var.hat)
 exportClasses("recurrent-data")
 export(eq_solver)
 export(gen_homo_poisson)
