@@ -12,15 +12,9 @@
 #'
 #'@export
 gen_inhomo_poisson <- function(lambda, T_0, lambda_u = NULL) {
-	result <- c()
-	lambda_u <- optimize(lambda, c(0, T_0), maximum = TRUE)$objective
-	t <- 0
-	while(t <= T_0) {
-		u <- runif(1)
-		t <- t - log(u) / lambda_u
-		if (t > T_0) break
-		u2 <- runif(1)
-		if (u2 <= lambda(t)/lambda_u) result <- append(result, t)
+	if (is.null(lambda_u)) {
+		lambda_u <- optimize(lambda, c(0, T_0), maximum = TRUE)$objective
 	}
-	result
+	result <- gen_homo_poisson(lambda_u, T_0)
+	result[runif(length(result)) < sapply(result, function(r) lambda(r) / lambda_u)]
 }
