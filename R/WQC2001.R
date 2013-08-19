@@ -49,7 +49,9 @@ F.hat <- function(obj) {
 Lambda.hat <- function(obj, bootstrap = FALSE) {
 	F.hat <- obj$F.hat
 	m <- sapply(obj@t, length)
-	Lambda.hat.T_0 <- mean(m / F.hat(obj@y)) # TODO: ill condition checking
+	y.inv <- 1 / F.hat(obj@y)
+	if (any(is.nan(y.inv))) stop("TODO: ill condition")
+	Lambda.hat.T_0 <- mean(m * y.inv) # TODO: ill condition checking
 	return(function(t, bootstrap = FALSE, B = 100, error.measurement.function = stats::sd) {
 		if (!bootstrap) return(Lambda.hat.T_0 * F.hat(t))
 		estimate <- obj$Lambda.hat(t)
@@ -218,6 +220,6 @@ a.var.hat <- function(obj) {
 	}
 	n <- length(obj@y)
 	return(function(t) {
-		mean(sapply(1:n, function(i) d[[i]](t))^2)
+		mean(sapply(1:n, function(i) d[[i]](t))^2 / n)
 	})
 }
