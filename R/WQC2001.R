@@ -188,9 +188,12 @@ c.hat.gen <- function(obj, F.hat = NULL, bi.gen = NULL) {
 	m <- sapply(obj@t, length)
 	if (is.null(bi.gen)) bi.gen <- b.hat.gen(obj)
 	if (is.null(F.hat)) F.hat <- obj$F.hat
+	Lambda.hat.T_0 <- obj$Lambda.hat(obj@T_0)
+	F.hat.y <- F.hat(obj@y)
 	return(function(i) {
 		bi <- bi.gen(i)
-		mean(sapply(obj@y, function(y) bi(y)) * m / F.hat(obj@y))
+		bi.y <- sapply(obj@y, function(y) bi(y))
+		mean(bi.y * m / F.hat.y) + m[i] / F.hat.y[i] - Lambda.hat.T_0
 	})	
 }
 
