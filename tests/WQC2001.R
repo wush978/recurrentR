@@ -79,3 +79,10 @@ lambda <- function(x) exp(-x/10)
 Lambda <- function(x) 10 * (1 - exp(-x/10))
 T_0 <- rpois(1, 40)
 gen_z <- function() runif(1, 0.5, 1.5)
+do_exp(lambda, Lambda, T_0, gen_z)
+
+lambda <- function(x) rep(1, length(x))
+Lambda <- function(x) x
+T_0 <- rpois(1, 40)
+gen_z <- function() rexp(1)
+do_exp(lambda, Lambda, T_0, gen_z)
