@@ -211,8 +211,37 @@ d.hat.gen <- function(obj, F.hat = NULL, Lambda.hat = NULL, bi.gen = NULL, ci.ge
 	})
 }
 
+e.hat.gen <- function(obj, F.hat = NULL, bi.gen = NULL, w = NULL, gamma = NULL) {
+	if (is.null(F.hat)) F.hat <- obj$F.hat
+	if (is.null(bi.gen)) bi.gen <- b.hat.gen(obj)
+	if (is.null(w)) w <- rep(1, length(obj@y)) else stopifnot(length(w) == length(obj@y))
+	if (is.null(gamma)) gamma <- obj$U.hat() else stopifnot(length(gamma) == ncol(obj@X))
+	m <- sapply(obj@t, length)
+	F.hat.y <- F.hat(obj@y)
+	return(function(i) {
+		bi <- bi.gen(i)
+		as.vector((w * m * sapply(obj@y, bi) / F.hat.y) %*% obj@X) / length(obj@y) + (w[i] * obj@X[i,] * (m[i] /  F.hat.y[i] - exp(obj@X[i,] %*% gamma)))
+	})	
+}
+
+dei.dgamma.gen <- function(obj, w = NULL, gamma = NULL) {
+	if(is.null(w)) w <- rep(1, length(obj@y)) else stopifnot(length(w) == length(obj@y))
+	if (is.null(gamma)) gamma <- obj$U.hat() else stopifnot(length(gamma) == ncol(obj@X))
+	function(i) {
+		as.vector(- w[i] * exp(obj@X[i,] %*% gamma)) * (obj@X[i,] %*% t(obj@X[i,]))
+	}
+}
+
+#'@title Asymptotic Variance Estimator
+#'
+#'@return list. 
+#'
 #'@export
-a.var.hat <- function(obj) {
+asymptotic.var <- function(obj, w = NULL, gamma = NULL) {
+	browser()
+	n <- length(obj@y)
+	if (is.null(w)) w <- rep(1, n) else stopifnot(length(w) == n)
+	if (is.null(gamma)) gamma <- obj$U.hat() else stopifnot(length(gamma) == ncol(obj@X))
 	F.hat <- obj$F.hat
 	b.hat.gen <- recurrentR:::b.hat.gen(obj)
 	c.hat.gen <- recurrentR:::c.hat.gen(obj, F.hat=F.hat, b.hat.gen)
@@ -221,8 +250,16 @@ a.var.hat <- function(obj) {
 	for(i in seq_along(obj@y)) {
 		d[[i]] <- d.hat.gen(i)
 	}
-	n <- length(obj@y)
-	return(function(t) {
+	dei.dgamma <- dei.dgamma.gen(obj, w, gamma)
+	dei.dgamma.i <- lapply(1:length(obj@y), function(i) -dei.dgamma(i))
+	psi <- Reduce("+", dei.dgamma.i) / n
+	ei <- e.hat.gen(obj)
+	ei.seq <- sapply(seq_along(obj@y), ei)
+	psi.inv <- solve(psi)
+	gamma.var.hat <- psi.inv %*% var(t(ei.seq)) %*% psi.inv / n
+	colnames(gamma.var.hat) <- rownames(gamma.var.hat)
+	return(list(Lambda.hat.var = function(t) {
 		mean(sapply(1:n, function(i) d[[i]](t))^2 / n)
-	})
+	}, gamma.var.hat = gamma.var.hat))
 }
+

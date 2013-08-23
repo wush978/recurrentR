@@ -1,4 +1,4 @@
-export(a.var.hat)
+export(asymptotic.var)
 exportClasses("recurrent-data")
 export(eq_solver)
 export(gen_homo_poisson)

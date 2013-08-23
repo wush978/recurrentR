@@ -86,3 +86,5 @@ Lambda <- function(x) x
 T_0 <- rpois(1, 40)
 gen_z <- function() rexp(1)
 do_exp(lambda, Lambda, T_0, gen_z)
+
+asymptotic.var(obj)
