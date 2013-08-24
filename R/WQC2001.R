@@ -51,7 +51,12 @@ Lambda.hat <- function(obj, bootstrap = FALSE) {
 	m <- sapply(obj@t, length)
 	y.inv <- 1 / F.hat(obj@y)
 	if (any(is.nan(y.inv))) stop("TODO: ill condition")
-	Lambda.hat.T_0 <- mean(m * y.inv) # TODO: ill condition checking
+	if (ncol(obj@X) == 0) {
+		Lambda.hat.T_0 <- mean(m * y.inv)
+	} else {
+		gamma <- obj$U.hat()
+		Lambda.hat.T_0 <- exp(gamma[1])
+	}
 	return(function(t, bootstrap = FALSE, B = 100, error.measurement.function = stats::sd) {
 		if (!bootstrap) return(Lambda.hat.T_0 * F.hat(t))
 		estimate <- obj$Lambda.hat(t)
@@ -65,23 +70,21 @@ Lambda.hat <- function(obj, bootstrap = FALSE) {
 }
 
 #'@title Solve 
-U.hat.solve <- function(X, b, tol) {
-	gamma <- solve(t(X) %*% X, t(X) %*% (b-1))
-	f1 <- function(gamma) {
+U.hat.solve <- function(X, b, tol, verbose = FALSE, gamma = NULL) {
+# 	gamma <- solve(t(X) %*% X, t(X) %*% (b-1))
+	if (is.null(gamma)) gamma <- rep(0, ncol(X))
+	g <- function(gamma) {
 		t(X) %*% (b - exp(X %*% gamma))
 	}
-	f2 <- function(gamma) {
-		t(X) %*% diag(c(exp(X %*% gamma)), nrow(X), nrow(X)) %*% X
+	g.gradient <- function(gamma) {
+		- t(X) %*% diag(c(exp(X %*% gamma)), nrow(X), nrow(X)) %*% X
 	}
-# 	f2.gamma <- f2(gamma)
-# 	gamma.new <- solve(f2.gamma, f2.gamma %*% gamma + f1(gamma))
-# 	while (sum(abs(f1(gamma.new))) > tol) {
-# 		gamma <- gamma.new
-# 		f2.gamma <- f2(gamma)
-# 		gamma.new <- solve(f2.gamma, f2.gamma %*% gamma + f1(gamma), tol=tol)
-# 	}
-	temp <- nleqslv(gamma, f1, jac=f2)
-	if (length(temp$msg) > 0 && nchar(temp$msg) > 0) warning(temp$msg)
+	temp <- nleqslv(gamma, g, jac=g.gradient)
+	if (sum(abs(g(temp$x))) > tol) stop("Failed to converge during solving gamma")
+	if(verbose) {
+		cat(sprintf("Check if gamma is solved correctly: %s \n", paste(g(temp$x), collapse=",")))
+		cat(sprintf("message of nleqslv: %s ", temp$message))
+	}
 	return(temp$x)
 }
 
@@ -249,6 +252,9 @@ asymptotic.var <- function(obj, w = NULL, gamma = NULL) {
 	for(i in seq_along(obj@y)) {
 		d[[i]] <- d.hat.gen(i)
 	}
+	if (ncol(obj@X) == 0 | nrow(obj@X) == 0) return(list(Lambda.hat.var=function(t) {
+		mean(sapply(1:n, function(i) d[[i]](t))^2 / n)
+	}))
 	dei.dgamma <- dei.dgamma.gen(obj, w, gamma)
 	dei.dgamma.i <- lapply(1:length(obj@y), function(i) -dei.dgamma(i))
 	psi <- Reduce("+", dei.dgamma.i) / n
@@ -256,9 +262,14 @@ asymptotic.var <- function(obj, w = NULL, gamma = NULL) {
 	ei.seq <- sapply(seq_along(obj@y), ei)
 	psi.inv <- solve(psi)
 	gamma.var.hat <- psi.inv %*% var(t(ei.seq)) %*% psi.inv / n
+	fi.seq <- (psi.inv %*% ei.seq)[1,]
+	b <- list()
+	for(i in seq_along(obj@y)) {
+		b[[i]] <- b.hat.gen(i)
+	}
 	colnames(gamma.var.hat) <- rownames(gamma.var.hat)
 	return(list(Lambda.hat.var = function(t) {
-		mean(sapply(1:n, function(i) d[[i]](t))^2 / n)
+		(F.hat(t)^2 * exp(2 * gamma[1]) * mean((sapply(b, function(b) b(t)) + fi.seq)^2)) / n
 	}, gamma.var.hat = gamma.var.hat))
 }
 

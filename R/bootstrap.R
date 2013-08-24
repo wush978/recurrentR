@@ -6,7 +6,7 @@ gen_bootstrap <- function(obj) {
 		for(i in seq_along(retval)) {
 			index <- sample(index_set, n, TRUE)
 			if(nrow(obj@X) > 0) {
-				X <- obj@X[index,]
+				X <- obj@X[index,-1, drop=FALSE]
 			} else {
 				X <- obj@X
 			}
