@@ -26,7 +26,7 @@ setMethod(
 	"initialize", 
 	"recurrent-data",
 	function(.Object, X, y, t, W, T_0) {
-		.Object@X <- X
+		.Object@X <- cbind(1, X)
 		.Object@y <- y
 		.Object@t <- t
 		.Object@W <- W
