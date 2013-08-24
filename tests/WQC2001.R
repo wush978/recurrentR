@@ -82,7 +82,6 @@ do_exp <- function(lambda, Lambda, T_0, gen_z, beta, X, n) {
 	}
 }
 
-par(mfrow=c(2, 2))
 lambda <- function(x) exp(-x/10)
 Lambda <- function(x) 10 * (1 - exp(-x/10))
 T_0 <- rpois(1, 40)
@@ -92,12 +91,19 @@ beta <- c(1, -1)
 X <- cbind(sin(1:n), sample(c(0, 1), n, TRUE))
 # mean(X %*% beta)
 # sd(X %*% beta)
-# do_exp(lambda, Lambda, T_0, gen_z, beta, X, n)
+do_exp(lambda, Lambda, T_0, gen_z, beta, X, n)
 
-# lambda <- function(x) rep(1, length(x))
-# Lambda <- function(x) x
-# T_0 <- rpois(1, 40)
-# gen_z <- function() rexp(1)
-# do_exp(lambda, Lambda, T_0, gen_z)
+lambda <- function(x) rep(1, length(x))
+Lambda <- function(x) x
+T_0 <- rpois(1, 40)
+gen_z <- function() rexp(1)
+n <- 300
+X <- cbind(
+	sample(c(0, 1), n, TRUE), 
+	sample(c(0, 1), n, TRUE), 
+	sample(c(0, 1), n, TRUE), 
+	sample(c(0, 1), n, TRUE))
+beta <- rnorm(ncol(X), 0.5)
+do_exp(lambda, Lambda, T_0, gen_z, beta, X, n)
 # 
 # asymptotic.var(obj)

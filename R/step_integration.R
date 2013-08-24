@@ -25,7 +25,8 @@ step_integrate <- function(g, f, a, b) {
 #'@export
 step_integrate.StepFunction <- function(g, f, a, b) {
 	x <- f$x
-	index <- which(x >= a & x <= b)
+# 	index <- which(x >= a & x <= b)
+	index <- substring_index(x, a, b)
 	if (length(index) == 0) return(0)
 	y <- f$y
 	p <- diff(y)

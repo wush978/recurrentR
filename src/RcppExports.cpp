@@ -57,3 +57,20 @@ BEGIN_RCPP
     return __sexp_result;
 END_RCPP
 }
+// substring_index
+SEXP substring_index(NumericVector x, double a, double b);
+RcppExport SEXP recurrentR_substring_index(SEXP xSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        NumericVector x = Rcpp::as<NumericVector >(xSEXP);
+        double a = Rcpp::as<double >(aSEXP);
+        double b = Rcpp::as<double >(bSEXP);
+        SEXP __result = substring_index(x, a, b);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}

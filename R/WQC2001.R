@@ -184,6 +184,7 @@ b.hat.gen <- function(obj) {
 		k.numerator <- new(StepFunction, x, y)
 		k <- k.numerator / R^2
 		function(t) {
+			if (t == obj@T_0) return(0)
 			step_integrate.StepFunction(k, Q, t, obj@T_0) - sum(as.numeric(t < obj@t[[i]]) / R.t)
 		}
 	})
