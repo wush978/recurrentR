@@ -238,7 +238,6 @@ dei.dgamma.gen <- function(obj, w = NULL, gamma = NULL) {
 #'
 #'@export
 asymptotic.var <- function(obj, w = NULL, gamma = NULL) {
-	browser()
 	n <- length(obj@y)
 	if (is.null(w)) w <- rep(1, n) else stopifnot(length(w) == n)
 	if (is.null(gamma)) gamma <- obj$U.hat() else stopifnot(length(gamma) == ncol(obj@X))
