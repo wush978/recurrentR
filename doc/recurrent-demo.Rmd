@@ -11,9 +11,9 @@ library(recurrentR)
 ```{r param1}
 lambda <- function(x) exp(-x/10)
 par(mfrow=c(1, 2))
-curve(lambda)
+curve(lambda, 0, 40)
 Lambda <- function(x) 10 * (1 - exp(-x/10))
-curve(Lambda)
+curve(Lambda, 0, 40)
 T_0 <- rpois(1, 40)
 gen_z <- function() runif(1, 0.5, 1.5)
 n <- 150
@@ -126,9 +126,9 @@ for(i in seq_along(gamma)) {
 ```{r param2}
 lambda <- function(x) rep(1, length(x))
 par(mfrow=c(1, 2))
-curve(lambda)
+curve(lambda, 0, 40)
 Lambda <- function(x) x
-curve(Lambda)
+curve(Lambda, 0, 40)
 T_0 <- rpois(1, 40)
 gen_z <- function() runif(1, 0.5, 1.5)
 n <- 150
