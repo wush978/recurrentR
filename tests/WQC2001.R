@@ -97,7 +97,7 @@ lambda <- function(x) rep(1, length(x))
 Lambda <- function(x) x
 T_0 <- rpois(1, 40)
 gen_z <- function() rexp(1)
-n <- 300
+n <- 100
 X <- cbind(
 	sample(c(0, 1), n, TRUE), 
 	sample(c(0, 1), n, TRUE), 
