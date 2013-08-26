@@ -2,6 +2,7 @@
 
 ```{r loading-library}
 library(recurrentR)
+library(RPPGen)
 ```
 
 # Experiment 1
