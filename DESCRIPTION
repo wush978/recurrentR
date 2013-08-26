@@ -16,11 +16,9 @@ RcppModules: recurrentR
 Suggests:
     plotrix
 Collate:
-    'generator.R'
     'recurrent-data.class.R'
     'WQC2001.R'
     'bootstrap.R'
-    'numerical_solver.R'
     'step_integration.R'
     'RcppExports.R'
     'zzz.R'

@@ -10,19 +10,6 @@ eval_N <- function(s, y, m) {
     .Call('recurrentR_eval_N', PACKAGE = 'recurrentR', s, y, m)
 }
 
-#'@title Generate Homogeneous Poisson Process
-#'
-#'@param lambda Numeric value, the intensity.
-#'@param T_0 Positive numeric value, the upper bound.
-#'
-#'@description Generate a homogeneous poisson process with constant intensity \code{lambda} 
-#'in time interval \code{[0,T_0]}.
-#'
-#'@export
-gen_homo_poisson <- function(lambda, T_0) {
-    .Call('recurrentR_gen_homo_poisson', PACKAGE = 'recurrentR', lambda, T_0)
-}
-
 step_integrate_kernel <- function(g, x, p, a, b) {
     .Call('recurrentR_step_integrate_kernel', PACKAGE = 'recurrentR', g, x, p, a, b)
 }
