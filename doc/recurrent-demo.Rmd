@@ -3,6 +3,7 @@
 ```{r loading-library}
 library(recurrentR)
 library(RPPGen)
+library(plotrix)
 ```
 
 # Experiment 1
@@ -108,7 +109,6 @@ legend("bottomright",
 - green: parametric bootstrap C.I. (quantile)
 
 ```{r gamma.hat1}
-library(plotrix)
 par(mfrow=c(1, length(gamma)))
 asymptotic.gamma.sd <- sqrt(diag(v$gamma.var.hat))
 invisible(capture.output(u.hat <- obj$U.hat(TRUE)))
@@ -228,7 +228,6 @@ legend("bottomright",
 - green: parametric bootstrap C.I. (quantile)
 
 ```{r gamma.hat2}
-library(plotrix)
 par(mfrow=c(1, length(gamma)))
 asymptotic.gamma.sd <- sqrt(diag(v$gamma.var.hat))
 invisible(capture.output(u.hat <- obj$U.hat(TRUE)))
