@@ -30,5 +30,5 @@ step_integrate.StepFunction <- function(g, f, a, b) {
 	if (length(index) == 0) return(0)
 	y <- f$y
 	p <- diff(y)
-	sum(g$sort_call(x[index]) * p[index])
+	sum(.Call("StepFunction_sort_call", g, x[index], PACKAGE="recurrentR") * p[index])
 }
