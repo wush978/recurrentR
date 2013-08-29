@@ -48,3 +48,19 @@ RCPP_MODULE(recurrentR) {
 	;
 	
 }
+
+template<class T>
+T* extract_ptr(SEXP s) {
+	Rcpp::S4 s4(s);
+	Rcpp::Environment env(s4);
+	Rcpp::XPtr<T> xptr(env.get(".pointer"));
+	return static_cast<T*>(R_ExternalPtrAddr(xptr));
+}
+
+RcppExport SEXP StepFunction_sort_call(SEXP Robj, SEXP Rx) {
+	BEGIN_RCPP
+	StepFunction& obj(*extract_ptr<StepFunction>(Robj));
+	NumericVector x(Rx);
+	return obj.sort_call(x);
+	END_RCPP
+}

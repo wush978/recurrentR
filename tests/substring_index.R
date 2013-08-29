@@ -83,4 +83,17 @@ a <-
 b <-
 	10
 
-stopifnot(all.equal(recurrentR:::substring_index(x, a, b), which(x >= a & x <= b)))
+library(rbenchmark)
+benchmark(
+	r1 <- which(x >= a & x <= b),
+	r2 <- .Call("substring_index", x, a, b, PACKAGE="recurrentR")
+	)
+all(r1 == r2)
+
+for(i in 1:1000) {
+	a <- runif(1, 0, 10)
+	b <- runif(1, 0, 10)
+	r1 <- which(x >= a & x <= b)
+	r2 <- .Call("substring_index", x, a, b, PACKAGE="recurrentR")
+	all(r1 == r2)
+}

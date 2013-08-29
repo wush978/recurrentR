@@ -14,7 +14,3 @@ step_integrate_kernel <- function(g, x, p, a, b) {
     .Call('recurrentR_step_integrate_kernel', PACKAGE = 'recurrentR', g, x, p, a, b)
 }
 
-substring_index <- function(x, a, b) {
-    .Call('recurrentR_substring_index', PACKAGE = 'recurrentR', x, a, b)
-}
-
