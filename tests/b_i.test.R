@@ -1,4 +1,5 @@
 library(recurrentR)
+library(RPPGen) # library(devtools);install_github('RPPGen', 'wush978')
 
 lambda <- function(x) exp(-x/10)
 T_0 <- rpois(1, 40)
@@ -21,7 +22,8 @@ rm(list=c("y", "t", "T_0"), envir=globalenv())
 
 
 f1 <- recurrentR:::b.hat(obj, 1)
-f2 <- recurrentR:::b.hat.c(obj, 1)
+b.hat.gen <- recurrentR:::b.hat.gen(obj)
+f2 <- b.hat.gen(1)
 
 x <- seq(0, obj@T_0, length=100)
 system.time({

@@ -1,3 +1,4 @@
+library(recurrentR)
 n <- 150
 a <- list()
 y <- rexp(n)
@@ -11,9 +12,11 @@ f0 <- function(s) {
 
 
 s <- sort(unlist(a))
+print("origin")
 system.time({
 	r1 <- sapply(s, f0)
 })
+print("eval_N")
 system.time({
 	y.i <- order(y)
 	m <- sapply(a, length)

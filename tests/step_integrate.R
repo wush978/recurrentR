@@ -1,3 +1,4 @@
+library(recurrentR)
 p <- rexp(100)
 p <- p/sum(p)
 

@@ -23,8 +23,10 @@ stopifnot((f1^2)$sort_call( x ) == f1$sort_call( x )^2)
 x <- sort(rexp(100))
 a <- quantile(x, 0.25) + 100
 b <- quantile(x, 0.75) - 100
-index <- which(x >= a & x <= b)
-recurrentR:::bupper(x, a)
-head(index, 1)
-recurrentR:::blower(x, b)
-tail(index, 1)
+i1 <- which(x >= a & x <= b)
+i2 <- .Call("substring_index", x, a, b)
+if (length(i1) == 0) {
+  stopifnot(length(i2) == 0)
+} else {
+  all.equal(i1, i2)
+}
