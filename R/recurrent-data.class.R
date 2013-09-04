@@ -3,11 +3,12 @@
 #'
 #'@description The S4 class for recurrent data.
 #'
-#'@param X, data.frame. The time independent covariate of subjects.
-#'@param y, numeric vector. The censor time.
-#'@param t, list. The time of recurrent events.
-#'@param W, data.frame. The time dependent covariates.
-#'@param T_0, numeric value. The time of termination of experients.
+#'@param X data.frame. The time independent covariate of subjects.
+#'@param y numeric vector. The censor time.
+#'@param t list. The time of recurrent events.
+#'@param W data.frame. The time dependent covariates.
+#'@param T_0 numeric value. The time of termination of experients.
+#'@param D numeric vector. The failure time.
 #'
 #'@exportClass recurrent-data
 setClass(
@@ -18,6 +19,7 @@ setClass(
 		t = "list",
 		W = "data.frame",
 		T_0 = "numeric",
+		D = "numeric",
 		B = "list"
 	)
 )
@@ -25,12 +27,13 @@ setClass(
 setMethod(
 	"initialize", 
 	"recurrent-data",
-	function(.Object, X, y, t, W, T_0) {
+	function(.Object, X, y, t, W, T_0, D = numeric(0)) {
 		if (ncol(X) > 0) .Object@X <- cbind(1, X) else .Object@X <- X
 		.Object@y <- y
 		.Object@t <- t
 		.Object@W <- W
 		.Object@T_0 <- T_0
+		.Object@D <- D
 		.Object@B <- list()
 		.Object
 	}
