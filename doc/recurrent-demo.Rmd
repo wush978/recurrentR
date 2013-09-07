@@ -38,7 +38,7 @@ t <- sapply(seq_along(y), function(i) {
 	return(retval)
 	# 	return(as.numeric(ceiling(retval)))
 })
-obj <- new("recurrent-data", X, y, t, data.frame(), T_0)
+obj <- new("recurrent-data", X, y, t, data.frame(), T_0, logical(0))
 ```
 
 ## $\hat{\Lambda}$
