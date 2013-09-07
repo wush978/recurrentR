@@ -16,6 +16,9 @@ Delta_i <- function(obj) {
 }
 
 #'@title Borrow-Strength Method
+#'
+#'@description
+#'Estimate regression coefficient of the hazard function of the failure time.
 BSM <- function(obj, tol, verbose = TRUE) {
 	Zi <- Z_i.hat(obj)
 	D <- Delta_i(obj)
