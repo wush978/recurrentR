@@ -2,7 +2,7 @@
 \alias{BSM}
 \title{Borrow-Strength Method}
 \usage{
-  BSM(obj)
+  BSM(obj, tol, verbose = TRUE)
 }
 \description{
   Borrow-Strength Method
