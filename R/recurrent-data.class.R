@@ -19,7 +19,7 @@ setClass(
 		t = "list",
 		W = "data.frame",
 		T_0 = "numeric",
-		D = "numeric",
+		D = "logical",
 		B = "list"
 	)
 )
@@ -27,13 +27,17 @@ setClass(
 setMethod(
 	"initialize", 
 	"recurrent-data",
-	function(.Object, X, y, t, W, T_0, D = numeric(0)) {
+	function(.Object, X, y, t, W, T_0, D) {
 		if (ncol(X) > 0) .Object@X <- cbind(1, X) else .Object@X <- X
 		.Object@y <- y
 		.Object@t <- t
 		.Object@W <- W
 		.Object@T_0 <- T_0
-		.Object@D <- D
+		if (length(D) == 0) {
+			.Object@D <- rep(FALSE, length(y))
+		} else {
+			.Object@D <- D
+		}
 		.Object@B <- list()
 		.Object
 	}
