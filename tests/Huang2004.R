@@ -27,4 +27,4 @@ for(i in seq_along(y)) {
 }
 obj <- new("recurrent-data", X, y, t, data.frame(), T_0, D)
 
-recurrentR:::BSM(obj)
+recurrentR:::H0.hat(obj, tol=1e-07, TRUE)
