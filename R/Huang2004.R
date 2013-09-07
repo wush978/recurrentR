@@ -1,17 +1,17 @@
 Z_i.hat <- function(obj, F.hat = NULL, gamma = NULL) {
 	if (is.null(F.hat)) F.hat <- obj$F.hat
 	if (is.null(gamma)) gamma <- obj$U.hat()
-	m <- sapply(obj@y, length)
-	y.inv <- 1 / F.hat(obj@y)
-	return(m / y.inv * exp(obj@X %*% gamma))
+	m <- sapply(obj@t, length)
+	F.hat.y <- F.hat(obj@y)
+	if (sum(F.hat.y == 0) > 0) stop("TODO: ill condition")
+	return(m / (F.hat.y * exp(obj@X %*% gamma)))
 }
 
 #'@title Indicator of censoring type.
 #'@description
 #'\eqn{D_i = 1} if the failure time is observed.
 Delta_i <- function(obj) {
-	stopifnot(length(obj@D) == length(obj@y))
-	as.integer(obj@D < obj@y)
+	as.integer(obj@D)
 }
 
 #'@title Moment Estimators associated with subject-specific latent variable
@@ -63,10 +63,9 @@ BSM <- function(obj, tol = 1e-7, verbose = FALSE) {
 	stopifnot(ncol(obj@X) > 1) # TODO
 	X <- obj@X[y.index, -1]
 	y.rank <- rank(y, ties.method="min")
-	browser()
 	U <- function(Beta) {
-		S <- Si(Beta)
-		SS <- SSi(Beta)
+		S <- Si(Beta, Zi, X)
+		SS <- SSi(Beta, Zi, X)
 		retval <- Beta
 		retval[] <- 0
 		for(i in 1:n) {
@@ -120,5 +119,4 @@ H0.hat <- function(obj, ...) {
 	X <- obj@X[y.index, -1]
 	S <- Si(Beta, Zi, X)
 	SS <- SSi(Beta, Zi, X)
-	browser()	
 }
