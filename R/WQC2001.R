@@ -80,11 +80,11 @@ U.hat.solve <- function(X, b, tol, verbose = FALSE, gamma = NULL) {
 		- t(X) %*% diag(c(exp(X %*% gamma)), nrow(X), nrow(X)) %*% X
 	}
 	temp <- nleqslv(gamma, g, jac=g.gradient)
-	if (sum(abs(g(temp$x))) > tol) stop("Failed to converge during solving gamma")
 	if(verbose) {
 		cat(sprintf("Check if gamma is solved correctly: %s \n", paste(g(temp$x), collapse=",")))
 		cat(sprintf("message of nleqslv: %s ", temp$message))
 	}
+	if (sum(abs(g(temp$x))) > tol) stop("Failed to converge during solving gamma")
 	return(temp$x)
 }
 
