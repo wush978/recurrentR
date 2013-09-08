@@ -118,5 +118,14 @@ H0.hat <- function(obj, ...) {
 	stopifnot(ncol(obj@X) > 1) # TODO
 	X <- obj@X[y.index, -1]
 	S <- Si(Beta, Zi, X)
-	SS <- SSi(Beta, Zi, X)
+  g <- function(s) {
+    index <- which(y >= s)
+    1/sum(S[index])
+  }
+  f <- function(s) {
+    index <- which(y <= s)
+    sum(D[index] * sapply(y[index], g))
+  }
+  x <- inverse(unique(y))
+  stepfun(x, append(0, sapply(x, f)))
 }
