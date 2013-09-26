@@ -54,6 +54,8 @@ DSSi <- function(Beta, Zi, X) t(apply(DSi(Beta, Zi, X), 1, cumsum))
 #'
 #'@description
 #'Estimate regression coefficient of the hazard function of the failure time.
+#'
+#'@param obj recurrent-data object
 BSM <- function(obj, tol = 1e-7, verbose = FALSE) {
 	y.index <- order(obj@y, decreasing=TRUE)
 	y <- obj@y[y.index]
@@ -108,6 +110,12 @@ BSM <- function(obj, tol = 1e-7, verbose = FALSE) {
 
 inverse <- function(x) x[length(x):1]
 
+#'@title Brewslow estimation
+#'
+#'@description An implementation of brewslow estimation, the formula (4) in 
+#'Huang 2004.
+#'
+#'@param obj recurrent-data object
 H0.hat <- function(obj, ...) {
 	Beta <- BSM(obj, ...)
 	y.index <- order(obj@y, decreasing=TRUE)
