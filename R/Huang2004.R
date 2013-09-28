@@ -1,3 +1,9 @@
+#'@title Estimator of random effect \eqn{Z_i}
+#'
+#'@description \deqn{\hat{Z}_i = \frac{m_i}{\hat{\Lambda}_0(Y_i) e^{X_i \hat{\alpha}}}}
+#'@param obj recurrent-data object
+#'@param F.hat cache of \code{obj$F.hat}
+#'@param F.hat cache of \code{obj$U.hat()}.
 Z_i.hat <- function(obj, F.hat = NULL, gamma = NULL) {
 	if (is.null(F.hat)) F.hat <- obj$F.hat
 	if (is.null(gamma)) gamma <- obj$U.hat()
