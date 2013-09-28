@@ -231,6 +231,22 @@ e.hat.gen <- function(obj, F.hat = NULL, bi.gen = NULL, w = NULL, gamma = NULL) 
 	})	
 }
 
+fi.hat <- function(obj, w = NULL, gamma = NULL, psi.inv = NULL, ei.seq = NULL) {
+  if(is.null(w)) w <- rep(1, length(obj@y)) else stopifnot(length(w) == length(obj@y))
+  if (is.null(gamma)) gamma <- obj$U.hat() else stopifnot(length(gamma) == ncol(obj@X))
+  if (is.null(psi.inv)) {
+    dei.dgamma <- dei.dgamma.gen(obj, w, gamma)
+    dei.dgamma.i <- lapply(1:length(obj@y), function(i) -dei.dgamma(i))
+    psi <- Reduce("+", dei.dgamma.i) / n
+    psi.inv <- solve(psi)
+  }
+  if (is.null(ei.seq)) {
+    ei <- e.hat.gen(obj)
+    ei.seq <- sapply(seq_along(obj@y), ei)
+  }
+  (psi.inv %*% ei.seq)
+}
+  
 dei.dgamma.gen <- function(obj, w = NULL, gamma = NULL) {
 	if(is.null(w)) w <- rep(1, length(obj@y)) else stopifnot(length(w) == length(obj@y))
 	if (is.null(gamma)) gamma <- obj$U.hat() else stopifnot(length(gamma) == ncol(obj@X))
@@ -259,14 +275,14 @@ asymptotic.var <- function(obj, w = NULL, gamma = NULL) {
 	if (ncol(obj@X) == 0 | nrow(obj@X) == 0) return(list(Lambda.hat.var=function(t) {
 		mean(sapply(1:n, function(i) d[[i]](t))^2 / n)
 	}))
-	dei.dgamma <- dei.dgamma.gen(obj, w, gamma)
-	dei.dgamma.i <- lapply(1:length(obj@y), function(i) -dei.dgamma(i))
-	psi <- Reduce("+", dei.dgamma.i) / n
-	ei <- e.hat.gen(obj)
-	ei.seq <- sapply(seq_along(obj@y), ei)
-	psi.inv <- solve(psi)
+  dei.dgamma <- dei.dgamma.gen(obj, w, gamma)
+  dei.dgamma.i <- lapply(1:length(obj@y), function(i) -dei.dgamma(i))
+  psi <- Reduce("+", dei.dgamma.i) / n
+  psi.inv <- solve(psi)
+  ei <- e.hat.gen(obj)
+  ei.seq <- sapply(seq_along(obj@y), ei)
 	gamma.var.hat <- psi.inv %*% var(t(ei.seq)) %*% psi.inv / n
-	fi.seq <- (psi.inv %*% ei.seq)[1,]
+	fi.seq <- fi.hat(obj, w, gamma, psi.inv, ei.seq)[1,]
 	b <- list()
 	for(i in seq_along(obj@y)) {
 		b[[i]] <- b.hat.gen(i)
