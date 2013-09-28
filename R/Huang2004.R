@@ -137,3 +137,67 @@ H0.hat <- function(obj, ...) {
   x <- inverse(unique(y))
   stepfun(x, append(0, sapply(x, f)))
 }
+
+phi_3.gen <- function(obj) {
+  y <- obj@y
+  m <- sapply(obj@t, length)
+  X <- obj@X[,-1]
+  F.hat.y <- obj$F.hat(y)
+  term_1 <-  m / F.hat.y
+  term_1[F.hat.y == 0] <- 0
+  alpha <- BSM(obj)
+  b.i <- lapply(1:length(y), b.hat.gen(obj))
+  fi.seq <- fi.hat(obj)[-1,]
+  Z_i <- Z_i.hat(obj)
+  retval <- function(i, t, b) {
+    term_2 <- term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y > t, 1, 0)
+    retval <- mean(term_2 * (X %*% fi.seq[,i] + Vectorize(b.i[[i]])(y)))
+    retval + term_2[i] - mean(Z_i * exp(X %*% b) * ifelse(obj@y > t, 1, 0))
+  }
+}
+
+phi_4.gen <- function(obj) {
+  browser()
+  y <- obj@y
+  m <- sapply(obj@t, length)
+  X <- obj@X[,-1]
+  F.hat.y <- obj$F.hat(y)
+  term_1 <-  m / F.hat.y
+  term_1[F.hat.y == 0] <- 0
+  alpha <- BSM(obj)
+  b.i <- lapply(1:length(y), b.hat.gen(obj))
+  fi.seq <- fi.hat(obj)[-1,]
+  Z_i <- Z_i.hat(obj)
+  function(i, t, b) {
+    term_2 <- term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y > t, 1, 0)
+    coef <- as.vector(term_2 * (X %*% fi.seq[,i] + Vectorize(b.i[[i]])(y)))
+    retval <- (coef %*% X)/nrow(X)
+    retval + term_2[i] * X[i,] - as.vector(Z_i * exp(X %*% b) * ifelse(obj@y > t, 1, 0)) %*% X / nrow(X)
+  }
+}
+
+phi.gen <- function(obj) {
+  function(i, beta) {
+    
+  }  
+}
+
+Gamma.hat <- function(obj) {
+  
+}
+
+Sigma.hat <- function(obj) {
+  
+}
+
+beta.hat <- function(obj) {
+  
+}
+
+phi_i.gen <- function(obj) {
+  
+}
+
+H0.hat.var <- function(obj) {
+  
+}
