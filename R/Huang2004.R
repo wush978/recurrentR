@@ -55,6 +55,44 @@ SSi <- function(Beta, Zi, X) cumsum(Si(Beta, Zi, X))
 #'@return numeric vector
 DSSi <- function(Beta, Zi, X) t(apply(DSi(Beta, Zi, X), 1, cumsum))
 
+U.gen <- function(Zi, y, X, D, n) {
+  function(Beta) {
+    S <- Si(Beta, Zi, X)
+    SS <- SSi(Beta, Zi, X)
+    retval <- Beta
+    retval[] <- 0
+    for(i in 1:n) {
+      temp <- D[i] * X[i,]
+      for(j in 1:n) {
+        if (y[j] < y[i]) next
+        temp <- temp - D[i] * S[j]*X[j,] / SS[i]
+      }
+      retval <- retval + temp
+    }
+    retval / n
+  }
+}
+
+Gamma.hat.gen <- function(Zi, y, X, D, n) {
+  function(Beta) {
+    S <- Si(Beta, Zi, X)
+    DS <- DSi(Beta, Zi, X)
+    SS <- SSi(Beta, Zi, X)
+    DSS <- DSSi(Beta, Zi, X)
+    retval <- matrix(0.0, ncol=length(Beta), nrow=length(Beta))
+    for(i in 1:n) {
+      temp <- retval
+      temp[] <- 0
+      for(j in 1:n) {
+        if (y[j] < y[i]) next
+        temp <- temp - D[i] * matrix((DS[,j] * SS[i] - S[j] * DSS[,i]) / SS[i]^2, ncol=1) %*% X[j,]
+      }
+      retval <- retval + temp
+    }
+    retval / n
+  }  
+}
+
 
 #'@title Borrow-Strength Method
 #'
@@ -71,40 +109,8 @@ BSM <- function(obj, tol = 1e-7, verbose = FALSE) {
 	stopifnot(ncol(obj@X) > 1) # TODO
 	X <- obj@X[y.index, -1]
 	y.rank <- rank(y, ties.method="min")
-	U <- function(Beta) {
-		S <- Si(Beta, Zi, X)
-		SS <- SSi(Beta, Zi, X)
-		retval <- Beta
-		retval[] <- 0
-		for(i in 1:n) {
-			temp <- D[i] * X[i,]
-			for(j in 1:n) {
-				if (y[j] < y[i]) next
-				temp <- temp - D[i] * S[j]*X[j,] / SS[i]
-			}
-			retval <- retval + temp
-		}
-		retval
-	}
-	
-	DU <- function(Beta) {
-		S <- Si(Beta, Zi, X)
-		DS <- DSi(Beta, Zi, X)
-		SS <- SSi(Beta, Zi, X)
-		DSS <- DSSi(Beta, Zi, X)
-		retval <- matrix(0.0, ncol=length(Beta), nrow=length(Beta))
-		for(i in 1:n) {
-			temp <- retval
-			temp[] <- 0
-			for(j in 1:n) {
-				if (y[j] < y[i]) next
-				temp <- temp - D[i] * matrix((DS[,j] * SS[i] - S[j] * DSS[,i]) / SS[i]^2, ncol=1) %*% X[j,]
-			}
-			retval <- retval + temp
-		}
-		retval
-	}
-	
+	U <- U.gen(Zi, y, X, D, n)
+	DU <- Gamma.hat.gen(Zi, y, X, D, n)
 	temp <- nleqslv(rep(0, ncol(obj@X) - 1), fn=U, jac=DU)
 	if(verbose) {
 		cat(sprintf("Check if gamma is solved correctly: %s \n", paste(U(temp$x), collapse=",")))
@@ -163,7 +169,6 @@ phi_3.gen <- function(obj) {
 }
 
 phi_4.gen <- function(obj) {
-  browser()
   y <- obj@y
   m <- sapply(obj@t, length)
   X <- obj@X[,-1]
@@ -183,17 +188,56 @@ phi_4.gen <- function(obj) {
 }
 
 phi.gen <- function(obj) {
+  y <- obj@y
+  m <- sapply(obj@t, length)
+  X <- obj@X[,-1]
+  F.hat.y <- obj$F.hat(y)
+  term_1 <-  m / F.hat.y
+  alpha <- BSM(obj)
+  b.i <- lapply(1:length(y), b.hat.gen(obj))
+  fi.seq <- fi.hat(obj)[-1,]
+  Z_i <- Z_i.hat(obj)
+  phi_3 <- phi_3.gen(obj)
+  phi_4 <- phi_4.gen(obj)
+  D <- Delta_i(obj)
   function(i, beta) {
-    
+    term1 <- sapply(y, function(s) {
+      term.0 <- as.vector(Z_i * exp(X %*% beta) * ifelse(y >= s, 1, 0))
+      term.den <- mean(term.0)^2
+      term.num <- term.0 %*% X / nrow(X)
+      retval <- as.vector(phi_3(i, s, beta) * term.num / term.den)
+    })
+    term2 <- sapply(y, function(s) {
+      term.0 <- as.vector(Z_i * exp(X %*% beta) * ifelse(y >= s, 1, 0))
+      term.den <- mean(term.0)
+      retval <- as.vector(phi_4(i, s, beta) / term.den)
+    })
+    term3 <- sapply(y, function(s) {
+      term.0 <- as.vector(Z_i * exp(X %*% beta) * ifelse(y >= s, 1, 0))
+      term.den <- mean(term.0)
+      term.num <- term.0 %*% X / nrow(X)
+      retval <- as.vector(term.num / term.den)
+    })
+    retval <- as.vector(D[i] * X[i,]) - as.vector(D %*% X / nrow(X))
+    retval <- retval + as.vector(term1 %*% D) / nrow(X)
+    retval <- retval - as.vector(term2 %*% D) / nrow(X)
+    retval <- retval + as.vector(term3 %*% D) / nrow(X)
+    a <- rep(0, nrow(X)) ; a[i] <- D[i]
+    retval <- retval - as.vector(term3 %*% a)
+    retval
   }  
 }
 
-Gamma.hat <- function(obj) {
-  
-}
 
-Sigma.hat <- function(obj) {
-  
+Sigma.hat.gen <- function(obj) {
+  n <- length(obj@y)
+  phi <- phi.gen(obj)
+  function(beta) {
+    phi_i <- sapply(1:n, function(i) phi(i, beta))
+    phi_star <- apply(phi_i, 1, mean)
+    term <- phi_i - phi_star
+    term %*% t(term) / n
+  }
 }
 
 beta.hat <- function(obj) {
