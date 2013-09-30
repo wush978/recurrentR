@@ -61,8 +61,25 @@ function() {
 # 
 # lm(y ~ x -1, )
 data.frame(y = Z.true, x = recurrentR:::Z_i.hat(obj))
-recurrentR:::BSM(obj)
+beta <- recurrentR:::BSM(obj) # gamma
 H0 <- recurrentR:::H0.hat(obj, tol=1e-07, TRUE)
 curve(H0, 0, obj@T_0)
 H <- function(t) t / T_0
 curve(H, 0, obj@T_0, add=TRUE, col=3)
+
+
+
+phi_3i <- recurrentR:::phi_3.gen(obj)
+phi_3i(1, 33, rnorm(2))
+
+phi_4i <- recurrentR:::phi_4.gen(obj)
+phi_4i(1, 33, rnorm(2))
+
+phi_i <- recurrentR:::phi.gen(obj)
+
+Sigma.hat <- recurrentR:::Sigma.hat.gen(obj)
+Sigma <- Sigma.hat(beta)
+
+Gamma.hat <- recurrentR:::Gamma.hat.gen(obj)
+Gamma <- Gamma.hat(Beta=beta)
+Gamma

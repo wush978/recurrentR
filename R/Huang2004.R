@@ -73,7 +73,20 @@ U.gen <- function(Zi, y, X, D, n) {
   }
 }
 
-Gamma.hat.gen <- function(Zi, y, X, D, n) {
+Gamma.hat.gen <- function(obj, Zi = NULL, y = NULL, X = NULL, D = NULL, n = NULL) {
+  y.index.eval <- FALSE
+  env <- environment()
+  for(argv in ls(envir=env)) {
+    if (is.null(env[[argv]])) y.index.eval <- TRUE
+  }
+  y.index.eval
+  if (y.index.eval) y.index <- order(obj@y, decreasing=TRUE)
+  if (is.null(y)) y <- obj@y[y.index]
+  if (is.null(Zi)) Zi <- Z_i.hat(obj)[y.index]
+  if (is.null(D)) D <- Delta_i(obj)[y.index]
+  if (is.null(n)) n <- length(obj@y)
+  stopifnot(ncol(obj@X) > 1) # TODO
+  if (is.null(X)) X <- obj@X[y.index, -1]
   function(Beta) {
     S <- Si(Beta, Zi, X)
     DS <- DSi(Beta, Zi, X)
@@ -110,7 +123,7 @@ BSM <- function(obj, tol = 1e-7, verbose = FALSE) {
 	X <- obj@X[y.index, -1]
 	y.rank <- rank(y, ties.method="min")
 	U <- U.gen(Zi, y, X, D, n)
-	DU <- Gamma.hat.gen(Zi, y, X, D, n)
+	DU <- Gamma.hat.gen(obj, Zi, y, X, D, n)
 	temp <- nleqslv(rep(0, ncol(obj@X) - 1), fn=U, jac=DU)
 	if(verbose) {
 		cat(sprintf("Check if gamma is solved correctly: %s \n", paste(U(temp$x), collapse=",")))
@@ -240,8 +253,13 @@ Sigma.hat.gen <- function(obj) {
   }
 }
 
-beta.hat <- function(obj) {
-  
+beta.var.hat <- function(obj) {
+  Sigma.gen <- Sigma.hat.gen(obj)
+  Gamma.gen <- Gamma.hat.gen(obj)
+  beta <- BSM(obj)
+  Sigma <- Sigma.gen(beta)
+  Gamma <- Gamma.gen(beta)
+  solve(Gamma) %*% Sigma %*% Gamma
 }
 
 phi_i.gen <- function(obj) {
