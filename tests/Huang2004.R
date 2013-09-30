@@ -8,9 +8,10 @@ Lambda <- function(x) 10 * (1 - exp(-x/10))
 # curve(Lambda, 0, 40)
 B <- 1000
 obj.list <- list()
+Z.true.list <- list()
 n <- 100
 for(i in 1:B) {
-  obj <- local({
+  temp <- local({
     T_0 <- rpois(1, 40)
     h <- function(t) rep(1/T_0, length(t))
     gen_z <- function() runif(1, 0.5, 1.5)
@@ -35,9 +36,10 @@ for(i in 1:B) {
     stopifnot(all(sapply(t, function(v) ifelse(length(v) > 0, max(v), 0)) < y))
     D.index <- D < y
     y[D < y] <- D[D < y]
-    new("recurrent-data", X, y, t, data.frame(), T_0, D.index)
+    list(obj=new("recurrent-data", X, y, t, data.frame(), T_0, D.index), Z.true=Z.true)
   })
-  obj.list[[i]] <- obj
+  obj.list[[i]] <- temp$obj
+  Z.true.list[[i]] <- temp$Z.true
 }
 
 # validate in WQC2001
@@ -101,7 +103,7 @@ for(i in seq_along(obj.list)) {
   setTxtProgressBar(pb, i)
 }
 close(pb)
-save(beta.list, obj.list, file="data/obj.list.rda")
+save(beta.list, obj.list, Z.true.list, file="data/obj.list.rda")
 beta <- do.call(rbind, beta.list)
 apply(beta, 2, mean) # mean
 var(beta) # var
@@ -129,10 +131,24 @@ for(i in seq_along(obj.list)) {
 U <- sqrt(n) * do.call(rbind, U.list)
 apply(U, 2, mean)
 var(U)
-system.time({
-  b <- c(2, -3)
-  phi_3 <- recurrentR:::phi_3.gen(obj, b)
-  phi_4 <- recurrentR:::phi_4.gen(obj, b)
-  Sigma <- recurrentR:::Sigma.hat.gen(obj, b=b, phi_3=phi_3, phi_4=phi_4)
-})
-Sigma
+
+Sigma.list <- list()
+pb <- txtProgressBar(max=length(obj.list), style=3)
+for(i in seq_along(obj.list)) {
+  obj <- obj.list[[i]]
+  system.time({
+    b <- c(2, -3)
+    phi_3 <- recurrentR:::phi_3.gen(obj, b)
+    phi_4 <- recurrentR:::phi_4.gen(obj, b)
+    phi <- recurrentR:::phi.gen(obj, b, phi_3=phi_3, phi_4=phi_4)
+    phi_i <- lapply(1:n, phi)
+    phi_i <- do.call(rbind, phi_i)
+    sqrt(n) * apply(phi_i, 2, sum)
+    U.list[[i]]
+    Sigma <- recurrentR:::Sigma.hat.gen(obj, b=b, phi_3=phi_3, phi_4=phi_4)
+  })
+  Sigma.list[[i]] <- Sigma
+  setTxtProgressBar(pb, i)
+}
+close(pb)
+
