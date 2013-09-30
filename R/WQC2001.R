@@ -112,7 +112,12 @@ U.hat <- function(obj) {
 		m <- sapply(obj@t, length)
 		y <- obj@y
 		F.hat <- obj$F.hat
-		b <- m / obj$F.hat(y)
+		F.hat.y <- F.hat(y)
+    if (sum(F.hat.y == 0) > 0) {
+      stopifnot(m[F.hat.y == 0] == 0)
+    }
+		b <- m / F.hat.y
+    b[is.nan(b)] <- 0
 		estimate <- U.hat.solve(obj@X, b, tol)
 		if (!bootstrap) {
 			return(estimate)
@@ -237,7 +242,7 @@ fi.hat <- function(obj, w = NULL, gamma = NULL, psi.inv = NULL, ei.seq = NULL) {
   if (is.null(psi.inv)) {
     dei.dgamma <- dei.dgamma.gen(obj, w, gamma)
     dei.dgamma.i <- lapply(1:length(obj@y), function(i) -dei.dgamma(i))
-    psi <- Reduce("+", dei.dgamma.i) / n
+    psi <- Reduce("+", dei.dgamma.i) / length(obj@y)
     psi.inv <- solve(psi)
   }
   if (is.null(ei.seq)) {
