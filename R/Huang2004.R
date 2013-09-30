@@ -9,8 +9,9 @@ Z_i.hat <- function(obj, F.hat = NULL, gamma = NULL) {
 	if (is.null(gamma)) gamma <- obj$U.hat()
 	m <- sapply(obj@t, length)
 	F.hat.y <- F.hat(obj@y)
-	if (sum(F.hat.y == 0) > 0) stop("TODO: ill condition")
-	return(m / (F.hat.y * exp(obj@X %*% gamma)))
+  retval <- m / (F.hat.y * exp(obj@X %*% gamma))
+  retval[is.nan(retval)] <- 0
+	return(retval)
 }
 
 #'@title Indicator of censoring type.
@@ -55,7 +56,20 @@ SSi <- function(Beta, Zi, X) cumsum(Si(Beta, Zi, X))
 #'@return numeric vector
 DSSi <- function(Beta, Zi, X) t(apply(DSi(Beta, Zi, X), 1, cumsum))
 
-U.gen <- function(Zi, y, X, D, n) {
+U.gen <- function(obj, Zi = NULL, y = NULL, X = NULL, D = NULL, n = NULL) {
+  y.index.eval <- FALSE
+  env <- environment()
+  for(argv in ls(envir=env)) {
+    if (is.null(env[[argv]])) y.index.eval <- TRUE
+  }
+  y.index.eval
+  if (y.index.eval) y.index <- order(obj@y, decreasing=TRUE)
+  if (is.null(y)) y <- obj@y[y.index]
+  if (is.null(Zi)) Zi <- Z_i.hat(obj)[y.index]
+  if (is.null(D)) D <- Delta_i(obj)[y.index]
+  if (is.null(n)) n <- length(obj@y)
+  stopifnot(ncol(obj@X) > 1) # TODO
+  if (is.null(X)) X <- obj@X[y.index, -1]
   function(Beta) {
     S <- Si(Beta, Zi, X)
     SS <- SSi(Beta, Zi, X)
@@ -65,7 +79,11 @@ U.gen <- function(Zi, y, X, D, n) {
       temp <- D[i] * X[i,]
       for(j in 1:n) {
         if (y[j] < y[i]) next
-        temp <- temp - D[i] * S[j]*X[j,] / SS[i]
+        if (SS[i] == 0) {
+          stopifnot(D[i] * S[j] * X[j,] == 0)
+        } else {
+          temp <- temp - D[i] * S[j]*X[j,] / SS[i]
+        }
       }
       retval <- retval + temp
     }
@@ -98,7 +116,11 @@ Gamma.hat.gen <- function(obj, Zi = NULL, y = NULL, X = NULL, D = NULL, n = NULL
       temp[] <- 0
       for(j in 1:n) {
         if (y[j] < y[i]) next
-        temp <- temp - D[i] * matrix((DS[,j] * SS[i] - S[j] * DSS[,i]) / SS[i]^2, ncol=1) %*% X[j,]
+        if (SS[i] == 0) {
+          stopifnot(D[i] * (DS[,j] * SS[i] - S[j] * DSS[,i]) == 0)
+        } else {
+          temp <- temp - D[i] * matrix((DS[,j] * SS[i] - S[j] * DSS[,i]) / SS[i]^2, ncol=1) %*% X[j,]
+        }
       }
       retval <- retval + temp
     }
@@ -122,7 +144,7 @@ BSM <- function(obj, tol = 1e-7, verbose = FALSE) {
 	stopifnot(ncol(obj@X) > 1) # TODO
 	X <- obj@X[y.index, -1]
 	y.rank <- rank(y, ties.method="min")
-	U <- U.gen(Zi, y, X, D, n)
+	U <- U.gen(obj, Zi, y, X, D, n)
 	DU <- Gamma.hat.gen(obj, Zi, y, X, D, n)
 	temp <- nleqslv(rep(0, ncol(obj@X) - 1), fn=U, jac=DU)
 	if(verbose) {
@@ -163,70 +185,97 @@ H0.hat <- function(obj, ...) {
   stepfun(x, append(0, sapply(x, f)))
 }
 
-phi_3.gen <- function(obj) {
+phi_3.gen <- function(obj, b, F.hat.y = NULL, alpha = NULL, b.i = NULL, fi.seq = NULL, Z_i = NULL) {
   y <- obj@y
   m <- sapply(obj@t, length)
   X <- obj@X[,-1]
-  F.hat.y <- obj$F.hat(y)
+  if (is.null(F.hat.y)) F.hat.y <- obj$F.hat(y)
   term_1 <-  m / F.hat.y
   term_1[F.hat.y == 0] <- 0
-  alpha <- BSM(obj)
-  b.i <- lapply(1:length(y), b.hat.gen(obj))
-  fi.seq <- fi.hat(obj)[-1,]
-  Z_i <- Z_i.hat(obj)
-  retval <- function(i, t, b) {
-    term_2 <- term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y > t, 1, 0)
-    retval <- mean(term_2 * (X %*% fi.seq[,i] + Vectorize(b.i[[i]])(y)))
-    retval + term_2[i] - mean(Z_i * exp(X %*% b) * ifelse(obj@y > t, 1, 0))
+  if (is.null(alpha)) alpha <- BSM(obj)
+  if (is.null(b.i)) b.i <- lapply(1:length(y), b.hat.gen(obj))
+  if (is.null(fi.seq)) fi.seq <- fi.hat(obj)[-1,]
+  if (is.null(Z_i)) Z_i <- Z_i.hat(obj)
+  n <- length(y)
+  cache <- matrix(NA, n, n)
+  term_2.cache <- lapply(obj@y, function(t) term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y > t, 1, 0))
+  term_3.cache <- lapply(1:n, function(i) (X %*% fi.seq[,i] + Vectorize(b.i[[i]])(y)))
+  term_4.cache <- lapply(obj@y, function(t) mean(Z_i * exp(X %*% b) * ifelse(obj@y > t, 1, 0)))
+  call <- 0L
+  miss <- 0L
+  retval <- function(i, j) {
+    call <- call + 1
+    if (is.na(cache[i,j])) {
+      miss <- miss + 1
+      retval <- mean(term_2.cache[[j]] * term_3.cache[[i]])
+      cache[i,j] <- retval + term_2.cache[[j]][i] - term_4.cache[[j]]
+    }
+    cache[i,j]
   }
 }
 
-phi_4.gen <- function(obj) {
+phi_4.gen <- function(obj, b, F.hat.y = NULL, alpha = NULL, b.i = NULL, fi.seq = NULL, Z_i = NULL) {
   y <- obj@y
   m <- sapply(obj@t, length)
   X <- obj@X[,-1]
-  F.hat.y <- obj$F.hat(y)
+  if (is.null(F.hat.y)) F.hat.y <- obj$F.hat(y)
   term_1 <-  m / F.hat.y
   term_1[F.hat.y == 0] <- 0
-  alpha <- BSM(obj)
-  b.i <- lapply(1:length(y), b.hat.gen(obj))
-  fi.seq <- fi.hat(obj)[-1,]
-  Z_i <- Z_i.hat(obj)
-  function(i, t, b) {
-    term_2 <- term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y > t, 1, 0)
-    coef <- as.vector(term_2 * (X %*% fi.seq[,i] + Vectorize(b.i[[i]])(y)))
-    retval <- (coef %*% X)/nrow(X)
-    retval + term_2[i] * X[i,] - as.vector(Z_i * exp(X %*% b) * ifelse(obj@y > t, 1, 0)) %*% X / nrow(X)
+  if (is.null(alpha)) alpha <- BSM(obj)
+  if (is.null(b.i)) b.i <- lapply(1:length(y), b.hat.gen(obj))
+  if (is.null(fi.seq)) fi.seq <- fi.hat(obj)[-1,]
+  if (is.null(Z_i)) Z_i <- Z_i.hat(obj)
+  n <- length(y)
+  cache <- vector("list", n*n)
+  dim(cache) <- c(n,n)
+  term_2.cache <- lapply(y, function(t) term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y > t, 1, 0))
+  term_3.cache <- lapply(1:n, function(i) (X %*% fi.seq[,i] + Vectorize(b.i[[i]])(y)))
+  term_4.cache <- lapply(y, function(t) as.vector(Z_i * exp(X %*% b) * ifelse(obj@y > t, 1, 0)) %*% X / nrow(X))
+  call <- 0L
+  miss <- 0L
+  function(i, j) {
+    call <- call + 1
+    if (is.null(cache[i,j][[1]])) {
+      miss <- miss + 1
+      term_2 <- term_2.cache[[j]]
+      term_3 <- term_3.cache[[i]]
+      coef <- as.vector(term_2 * term_3)
+      retval <- (coef %*% X)/nrow(X)
+      cache[i,j] <- list(retval + term_2[i] * X[i,] - term_4.cache[[j]])
+    }
+    return(cache[i,j][[1]])
   }
 }
 
-phi.gen <- function(obj) {
+phi.gen <- function(obj, b, F.hat.y = NULL, alpha = NULL, b.i = NULL, fi.seq = NULL, Z_i = NULL, phi_3 = NULL, phi_4 = NULL, D = NULL) {
   y <- obj@y
   m <- sapply(obj@t, length)
   X <- obj@X[,-1]
-  F.hat.y <- obj$F.hat(y)
-  term_1 <-  m / F.hat.y
-  alpha <- BSM(obj)
-  b.i <- lapply(1:length(y), b.hat.gen(obj))
-  fi.seq <- fi.hat(obj)[-1,]
-  Z_i <- Z_i.hat(obj)
-  phi_3 <- phi_3.gen(obj)
-  phi_4 <- phi_4.gen(obj)
-  D <- Delta_i(obj)
-  function(i, beta) {
-    term1 <- sapply(y, function(s) {
-      term.0 <- as.vector(Z_i * exp(X %*% beta) * ifelse(y >= s, 1, 0))
+  if (is.null(F.hat.y)) F.hat.y <- obj$F.hat(y)
+  if (is.null(alpha)) alpha <- BSM(obj)
+  if (is.null(b.i)) b.i <- lapply(1:length(y), b.hat.gen(obj))
+  if (is.null(fi.seq)) fi.seq <- fi.hat(obj)[-1,]
+  if (is.null(Z_i)) Z_i <- Z_i.hat(obj)
+  if (is.null(phi_3)) phi_3 <- phi_3.gen(obj, b, F.hat.y=F.hat.y, alpha=alpha, b.i=b.i, fi.seq=fi.seq, Z_i=Z_i)
+  if (is.null(phi_4)) phi_4 <- phi_4.gen(obj, b, F.hat.y=F.hat.y, alpha=alpha, b.i=b.i, fi.seq=fi.seq, Z_i=Z_i)
+  if (is.null(D)) D <- Delta_i(obj)
+  n <- length(y)
+  function(i) {
+    term1 <- sapply(1:n, function(s_i) {
+      s <- y[s_i]
+      term.0 <- as.vector(Z_i * exp(X %*% b) * ifelse(y >= s, 1, 0))
       term.den <- mean(term.0)^2
       term.num <- term.0 %*% X / nrow(X)
-      retval <- as.vector(phi_3(i, s, beta) * term.num / term.den)
+      retval <- as.vector(phi_3(i, s_i) * term.num / term.den)
     })
-    term2 <- sapply(y, function(s) {
-      term.0 <- as.vector(Z_i * exp(X %*% beta) * ifelse(y >= s, 1, 0))
+    term2 <- sapply(1:n, function(s_i) {
+      s <- y[s_i]
+      term.0 <- as.vector(Z_i * exp(X %*% b) * ifelse(y >= s, 1, 0))
       term.den <- mean(term.0)
-      retval <- as.vector(phi_4(i, s, beta) / term.den)
+      retval <- as.vector(phi_4(i, s_i) / term.den)
     })
     term3 <- sapply(y, function(s) {
-      term.0 <- as.vector(Z_i * exp(X %*% beta) * ifelse(y >= s, 1, 0))
+      term.0 <- as.vector(Z_i * exp(X %*% b) * ifelse(y >= s, 1, 0))
       term.den <- mean(term.0)
       term.num <- term.0 %*% X / nrow(X)
       retval <- as.vector(term.num / term.den)
@@ -242,15 +291,24 @@ phi.gen <- function(obj) {
 }
 
 
-Sigma.hat.gen <- function(obj) {
+Sigma.hat.gen <- function(obj, b, phi_3 = NULL, phi_4 = NULL) {
   n <- length(obj@y)
-  phi <- phi.gen(obj)
-  function(beta) {
-    phi_i <- sapply(1:n, function(i) phi(i, beta))
-    phi_star <- apply(phi_i, 1, mean)
-    term <- phi_i - phi_star
-    term %*% t(term) / n
-  }
+  y <- obj@y
+  m <- sapply(obj@t, length)
+  X <- obj@X[,-1]
+  F.hat.y <- obj$F.hat(y)
+  alpha <- BSM(obj)
+  b.i <- lapply(1:length(y), b.hat.gen(obj))
+  fi.seq <- fi.hat(obj)[-1,]
+  Z_i <- Z_i.hat(obj)
+  if (is.null(phi_3)) phi_3 <- phi_3.gen(obj, b, F.hat.y, alpha, b.i, fi.seq=fi.seq, Z_i=Z_i)
+  if (is.null(phi_4)) phi_4 <- phi_4.gen(obj, b, F.hat.y, alpha, b.i, fi.seq=fi.seq, Z_i=Z_i)
+  D <- Delta_i(obj)
+  phi <- phi.gen(obj, b, F.hat.y, alpha, b.i, fi.seq, Z_i, phi_3, phi_4, D)
+  phi_i <- sapply(1:n, function(i) phi(i))
+  phi_star <- apply(phi_i, 1, mean)
+  term <- phi_i - phi_star
+  term %*% t(term) / n
 }
 
 beta.var.hat <- function(obj) {
