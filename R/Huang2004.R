@@ -320,10 +320,6 @@ beta.var.hat <- function(obj) {
   solve(Gamma) %*% Sigma %*% Gamma
 }
 
-phi_i.gen <- function(obj) {
-  
-}
-
 H0.hat.var <- function(obj) {
   
 }
