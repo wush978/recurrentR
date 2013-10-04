@@ -9,7 +9,7 @@ Z_i.hat <- function(obj, F.hat = NULL, gamma = NULL) {
 	if (is.null(gamma)) gamma <- obj$U.hat()
 	m <- sapply(obj@t, length)
 	F.hat.y <- F.hat(obj@y)
-  retval <- m / (F.hat.y * exp(obj@X %*% gamma))
+  retval <- m / (F.hat.y * exp(obj@X[,-1] %*% gamma[-1]))
   retval[is.nan(retval)] <- 0
 	return(retval)
 }
@@ -192,7 +192,7 @@ phi_3.gen <- function(obj, b, F.hat.y = NULL, alpha = NULL, b.i = NULL, fi.seq =
   if (is.null(F.hat.y)) F.hat.y <- obj$F.hat(y)
   term_1 <-  m / F.hat.y
   term_1[F.hat.y == 0] <- 0
-  if (is.null(alpha)) alpha <- BSM(obj)
+  if (is.null(alpha)) alpha <- obj$U.hat()[-1]
   if (is.null(b.i)) b.i <- lapply(1:length(y), b.hat.gen(obj))
   if (is.null(fi.seq)) fi.seq <- fi.hat(obj)[-1,]
   if (is.null(Z_i)) Z_i <- Z_i.hat(obj)
