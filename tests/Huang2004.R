@@ -10,6 +10,7 @@ B <- 1000
 obj.list <- list()
 Z.true.list <- list()
 n <- 100
+set.seed(1)
 for(i in 1:B) {
   temp <- local({
     T_0 <- rpois(1, 40)
@@ -36,7 +37,7 @@ for(i in 1:B) {
     stopifnot(all(sapply(t, function(v) ifelse(length(v) > 0, max(v), 0)) < y))
     D.index <- D < y
     y[D < y] <- D[D < y]
-    list(obj=new("recurrent-data", X, y, t, data.frame(), T_0, D.index), Z.true=Z.true)
+    list(obj=new("recurrent-data", X, y, t, data.frame(), T_0, D.index), Z.true=Z.true * Lambda(T_0))
   })
   obj.list[[i]] <- temp$obj
   Z.true.list[[i]] <- temp$Z.true
@@ -77,22 +78,6 @@ H <- function(t) t / T_0
 curve(H, 0, obj@T_0, add=TRUE, col=3)
 
 
-
-phi_3i <- recurrentR:::phi_3.gen(obj)
-phi_3i(1, 33, rnorm(2))
-
-phi_4i <- recurrentR:::phi_4.gen(obj)
-phi_4i(1, 33, rnorm(2))
-
-phi_i <- recurrentR:::phi.gen(obj)
-
-Sigma.hat <- recurrentR:::Sigma.hat.gen(obj)
-Sigma <- Sigma.hat(beta)
-
-Gamma.hat <- recurrentR:::Gamma.hat.gen(obj)
-Gamma <- Gamma.hat(Beta=beta)
-Gamma
-
 # Parametric bootstrap
 beta.list <- list()
 pb <- txtProgressBar(max=length(obj.list))
@@ -112,11 +97,19 @@ var(beta) # var
 # [1,]  0.15425732 -0.03837837
 # [2,] -0.03837837  2.53147999
 
-obj <- obj.list[[1]]
-beta <- beta.list[[1]]
-Gamma <- (recurrentR:::Gamma.hat.gen(obj))(beta)
-Sigma <- (recurrentR:::Sigma.hat.gen(obj))(beta)
-solve(Gamma) %*% Sigma %*% t(solve(Gamma)) / length(obj@y)
+data(obj.list)
+beta.var.hat <- list()
+pb <- txtProgressBar(max=length(obj.list), style=3)
+for(i in seq_along(obj.list)) {
+  if (i <= length(beta.var.hat)) next
+  obj <- obj.list[[1]]
+  beta <- beta.list[[1]]
+  Gamma <- (recurrentR:::Gamma.hat.gen(obj))(beta)
+  Sigma <- recurrentR:::Sigma.hat.gen(obj, beta)
+  beta.var.hat[[i]] <- solve(Gamma) %*% Sigma %*% t(solve(Gamma)) / length(obj@y)
+  setTxtProgressBar(pb, i)
+}
+close(pb)
 # > solve(Gamma) %*% Sigma %*% t(solve(Gamma)) / length(obj@y)
 # [,1]       [,2]
 # [1,] 11.778603  -1.266947
