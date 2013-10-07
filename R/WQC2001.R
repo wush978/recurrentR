@@ -232,7 +232,10 @@ e.hat.gen <- function(obj, F.hat = NULL, bi.gen = NULL, w = NULL, gamma = NULL) 
 	F.hat.y <- F.hat(obj@y)
 	return(function(i) {
 		bi <- bi.gen(i)
-		as.vector((w * m * sapply(obj@y, bi) / F.hat.y) %*% obj@X) / length(obj@y) + (w[i] * obj@X[i,] * (m[i] /  F.hat.y[i] - exp(obj@X[i,] %*% gamma)))
+		term_1 <- (w * m * sapply(obj@y, bi) / F.hat.y)
+    term_1[F.hat.y == 0] <- 0
+		term_2 <- ifelse(F.hat.y[i] != 0, m[i] /  F.hat.y[i], 0)
+		as.vector(term_1 %*% obj@X) / length(obj@y) + (w[i] * obj@X[i,] * (term_2  - exp(obj@X[i,] %*% gamma)))
 	})	
 }
 
