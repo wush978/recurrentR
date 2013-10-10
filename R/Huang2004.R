@@ -194,13 +194,13 @@ phi_3.gen <- function(obj, b, F.hat.y = NULL, alpha = NULL, b.i = NULL, fi.seq =
   term_1[F.hat.y == 0] <- 0
   if (is.null(alpha)) alpha <- obj$U.hat()[-1]
   if (is.null(b.i)) b.i <- lapply(1:length(y), b.hat.gen(obj))
-  if (is.null(fi.seq)) fi.seq <- fi.hat(obj)[-1,]
+  if (is.null(fi.seq)) fi.seq <- fi.hat(obj, gamma=alpha)[-1,]
   if (is.null(Z_i)) Z_i <- Z_i.hat(obj)
   n <- length(y)
   cache <- matrix(NA, n, n)
-  term_2.cache <- lapply(obj@y, function(t) term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y > t, 1, 0))
+  term_2.cache <- lapply(obj@y, function(t) term_1 * exp(X %*% (b - alpha)) * ifelse(obj@y >= t, 1, 0))
   term_3.cache <- lapply(1:n, function(i) (X %*% fi.seq[,i] + Vectorize(b.i[[i]])(y)))
-  term_4.cache <- lapply(obj@y, function(t) mean(Z_i * exp(X %*% b) * ifelse(obj@y > t, 1, 0)))
+  term_4.cache <- lapply(obj@y, function(t) mean(Z_i * exp(X %*% b) * ifelse(obj@y >= t, 1, 0)))
   call <- 0L
   miss <- 0L
   retval <- function(i, j) {
