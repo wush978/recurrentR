@@ -249,7 +249,7 @@ fi.hat <- function(obj, w = NULL, gamma = NULL, psi.inv = NULL, ei.seq = NULL) {
     psi.inv <- solve(psi)
   }
   if (is.null(ei.seq)) {
-    ei <- e.hat.gen(obj)
+    ei <- e.hat.gen(obj, gamma = gamma)
     ei.seq <- sapply(seq_along(obj@y), ei)
   }
   (psi.inv %*% ei.seq)
