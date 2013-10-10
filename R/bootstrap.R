@@ -18,7 +18,7 @@ gen_bootstrap <- function(obj) {
 				W <- obj@W
 			}
 			T_0 <- obj@T_0
-			retval[[i]] <- new("recurrent-data", X, y, t, W, T_0)
+			retval[[i]] <- create_recurrent_data(X, y, t, W, T_0, NULL)
 		}
 		return(retval)
 	})

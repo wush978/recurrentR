@@ -1,3 +1,17 @@
+#'@title Creator of recurrent-data
+#'
+#'@description Generate the recurrent-data object.
+#'
+#'@param X data.frame. The time independent covariate of subjects.
+#'@param y numeric vector. The censor time.
+#'@param t list. The time of recurrent events.
+#'@param W data.frame. The time dependent covariates.
+#'@param T_0 numeric value. The time of termination of experients.
+#'@param D numeric vector. The failure time.
+#'@export
+create_recurrent_data <- function(X, y, t, W, T_0, D) {
+  new("recurrent-data", X, y, t, W, T_0, D)
+}
 
 #'@title Recurrent Data
 #'
@@ -9,8 +23,6 @@
 #'@param W data.frame. The time dependent covariates.
 #'@param T_0 numeric value. The time of termination of experients.
 #'@param D numeric vector. The failure time.
-#'
-#'@exportClass recurrent-data
 setClass(
 	"recurrent-data",
 	representation(
