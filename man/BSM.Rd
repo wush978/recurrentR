@@ -2,9 +2,13 @@
 \alias{BSM}
 \title{Borrow-Strength Method}
 \usage{
-  BSM(obj, tol, verbose = TRUE)
+  BSM(obj, tol = 1e-07, verbose = FALSE)
+}
+\arguments{
+  \item{obj}{recurrent-data object}
 }
 \description{
-  Borrow-Strength Method
+  Estimate regression coefficient of the hazard function of
+  the failure time.
 }
 
