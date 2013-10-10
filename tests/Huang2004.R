@@ -125,6 +125,7 @@ U <- sqrt(n) * do.call(rbind, U.list)
 apply(U, 2, mean)
 var(U)
 
+data(obj.list)
 Sigma.list <- list()
 pb <- txtProgressBar(max=length(obj.list), style=3)
 for(i in seq_along(obj.list)) {

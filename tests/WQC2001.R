@@ -18,7 +18,8 @@ do_exp <- function(lambda, Lambda, T_0, gen_z, beta, X, n) {
 		return(retval)
 		# 	return(as.numeric(ceiling(retval)))
 	})
-	obj <- new("recurrent-data", X, y, t, data.frame(), T_0)
+	obj <- create_recurrent_data(X, y, t, data.frame(), T_0, NULL)
+#     new("recurrent-data", X, y, t, data.frame(), T_0)
 	
 	c.hat.gen <- recurrentR:::c.hat.gen(obj)
 	ci <- sapply(1:length(t), c.hat.gen)
@@ -62,7 +63,7 @@ do_exp <- function(lambda, Lambda, T_0, gen_z, beta, X, n) {
 			return(retval)
 			# 	return(as.numeric(ceiling(retval)))
 		})
-		obj.sim <- new("recurrent-data", X, y.sim, t.sim, data.frame(), T_0)
+		obj.sim <- create_recurrent_data(X, y.sim, t.sim, data.frame(), T_0, NULL)
 		real.sim[,i] <- obj.sim$Lambda.hat(x.eval)
 		setTxtProgressBar(pb, i)
 	}
