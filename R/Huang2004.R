@@ -56,6 +56,18 @@ Gamma.hat.gen <- function(obj, Zi = NULL, ...) {
   }  
 }
 
+#'@title Borrow Strength Method
+#'
+#'@param obj recurrent-data object
+#'@param U.hat function, \eqn{\hat{U}(\beta)} in Huang2004
+#'@param Gamma.hat function, \eqn{\hat{Gamma}(\beta) := \frac{d\hat{U}}{d\beta}} in Huang2004
+#'@param Zi numeric vector, \eqn{\hat{Z}_i} in Huang2004
+#'@param F.hat function, \eqn{\hat{\Lambda_0}} in Huang2004
+#'@param gamma.hat numeric vecotr, \eqn{\hat{alpha}} in Huang2004 and \eqn{\hat{\gamma}} in WQC2001
+#'@param verbose boolean value, whether print the message of \code{nleqslv} or not. Please see \code{\link{nleqslv}}.
+#'@param tol numeric value, used to determine convergence. Please see \code{\link{nleqslv}}.
+#'@param ...
+#'@export
 BorrowStrengthMethod <- function(obj, U.hat = NULL, Gamma.hat = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NULL, verbose = FALSE, tol = 1e-4, ...) {
   if (is.null(U.hat)) {
     if (is.null(Zi)) {
