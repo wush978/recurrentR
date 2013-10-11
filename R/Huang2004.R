@@ -49,9 +49,35 @@ Gamma.hat.gen <- function(obj, Zi = NULL, ...) {
   function(beta) {
     term_dem.mat <- t(as.vector(Zi * exp(X %*% beta)) * indicator.T)
     term_dem.i <- apply(term_dem.mat, 1, sum)
-    term_1 <- matrix(sapply(1:n, function(i)t(X) %*% (term_dem.mat[i,] * X)) %*% (1/term_dem.i), 2, 2)
+    term_1 <- matrix(sapply(1:n, function(i)t(X) %*% (term_dem.mat[i,] * X)) %*% (obj@D/term_dem.i), 2, 2)
     term_2_num.i.tmp <- term_dem.mat %*% X # row vector is num of term_2 of U.hat(beta)
-    term_2 <- t(term_2_num.i.tmp) %*% ((1/term_dem.i^2) * term_2_num.i.tmp)
-    -term_1 + term_2
+    term_2 <- t(term_2_num.i.tmp) %*% ((obj@D/term_dem.i^2) * term_2_num.i.tmp)
+    (-term_1 + term_2) / n
   }  
+}
+
+BorrowStrengthMethod <- function(obj, U.hat = NULL, Gamma.hat = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NULL, verbose = FALSE, tol = 1e-4, ...) {
+  if (is.null(U.hat)) {
+    if (is.null(Zi)) {
+      if (is.null(F.hat)) F.hat <- obj$F.hat
+      if (is.null(gamma.hat)) gamma.hat <- obj$U.hat()[-1]
+      Zi <- Zi.hat(obj, F.hat, gamma.hat)
+    }
+    U.hat <- U.hat.gen(obj, Zi)    
+  }
+  if (is.null(Gamma.hat)) {
+    if (is.null(Zi)) {
+      if (is.null(F.hat)) F.hat <- obj$F.hat
+      if (is.null(gamma.hat)) gamma.hat <- obj$U.hat()[-1]
+      Zi <- Zi.hat(obj, F.hat, gamma.hat)
+    }
+    Gamma.hat <- Gamma.hat.gen(obj, Zi)  
+  }
+  temp <- nleqslv(rep(0, ncol(obj@X) - 1), U.hat, jac=Gamma.hat)
+  if(verbose) {
+    cat(sprintf("Check if gamma is solved correctly: %s \n", paste(U.hat(temp$x), collapse=",")))
+    cat(sprintf("message of nleqslv: %s ", temp$message))
+  }
+  if (sum(abs(U.hat(temp$x))) > tol) stop("Failed to converge during solving gamma")
+  return(temp$x)
 }
