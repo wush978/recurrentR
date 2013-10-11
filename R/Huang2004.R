@@ -33,7 +33,7 @@ U.hat.gen <- function(obj, Zi = NULL, ...) {
 #       Zi[j] * exp(X[j,] %*% beta) * as.integer(y[j] >= y[i])
 #     }
     term_2_dem.mat <- t(as.vector(Zi * exp(X %*% beta)) * indicator.T)
-    term_2_dem.i <- apply(term_2_dem.mat, 1, sum)
+    term_2_dem.i <- as.vector(term_2_dem.mat %*% rep(1, n)) #apply(term_2_dem.mat, 1, sum)
     term_2_num.i <- term_2_dem.mat %*% X # row vector is num of term_2 of U.hat(beta)
     term_2 <- obj@D %*% (term_2_num.i / term_2_dem.i) / n
     as.vector(term_1 - term_2)
@@ -48,7 +48,7 @@ Gamma.hat.gen <- function(obj, Zi = NULL, ...) {
   indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
   function(beta) {
     term_dem.mat <- t(as.vector(Zi * exp(X %*% beta)) * indicator.T)
-    term_dem.i <- apply(term_dem.mat, 1, sum)
+    term_dem.i <- as.vector(term_dem.mat %*% rep(1, n))#apply(term_dem.mat, 1, sum)
     term_1 <- matrix(sapply(1:n, function(i)t(X) %*% (term_dem.mat[i,] * X)) %*% (obj@D/term_dem.i), 2, 2)
     term_2_num.i.tmp <- term_dem.mat %*% X # row vector is num of term_2 of U.hat(beta)
     term_2 <- t(term_2_num.i.tmp) %*% ((obj@D/term_dem.i^2) * term_2_num.i.tmp)
@@ -67,20 +67,17 @@ Gamma.hat.gen <- function(obj, Zi = NULL, ...) {
 #'@param verbose boolean value, whether print the message of \code{nleqslv} or not. Please see \code{\link{nleqslv}}.
 #'@param tol numeric value, used to determine convergence. Please see \code{\link{nleqslv}}.
 #'@param ...
+#'@return numeric vector, \eqn{\hat{\beta}} in Huang2004
 #'@export
 BorrowStrengthMethod <- function(obj, U.hat = NULL, Gamma.hat = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NULL, verbose = FALSE, tol = 1e-4, ...) {
   if (is.null(U.hat)) {
     if (is.null(Zi)) {
-      if (is.null(F.hat)) F.hat <- obj$F.hat
-      if (is.null(gamma.hat)) gamma.hat <- obj$U.hat()[-1]
       Zi <- Zi.hat(obj, F.hat, gamma.hat)
     }
     U.hat <- U.hat.gen(obj, Zi)    
   }
   if (is.null(Gamma.hat)) {
     if (is.null(Zi)) {
-      if (is.null(F.hat)) F.hat <- obj$F.hat
-      if (is.null(gamma.hat)) gamma.hat <- obj$U.hat()[-1]
       Zi <- Zi.hat(obj, F.hat, gamma.hat)
     }
     Gamma.hat <- Gamma.hat.gen(obj, Zi)  
@@ -92,4 +89,18 @@ BorrowStrengthMethod <- function(obj, U.hat = NULL, Gamma.hat = NULL, Zi = NULL,
   }
   if (sum(abs(U.hat(temp$x))) > tol) stop("Failed to converge during solving gamma")
   return(temp$x)
+}
+
+H0.hat.gen <- function(obj, beta = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NULL, ...) {
+  if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat = F.hat, gamma.hat = gamma.hat, ...)
+  if (is.null(beta)) beta <- BorrowStrengthMethod(obj, Zi=Zi)
+  X <- obj@X[,-1]
+  y <- obj@y
+  n <- length(y)
+  indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
+  function(t) {
+    term_dem.mat <- t(as.vector(Zi * exp(X %*% beta)) * indicator.T)
+    term_dem.i <- as.vector(term_dem.mat %*% rep(1, n))
+    as.vector((obj@D / term_dem.i) %*% outer(seq_along(y), seq_along(t), function(i, j) as.integer(y[i] <= t[j])))
+  }
 }
