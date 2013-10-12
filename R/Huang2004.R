@@ -102,3 +102,54 @@ H0.hat.gen <- function(obj, beta = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NU
     as.vector((obj@D / term_dem.i) %*% outer(seq_along(y), seq_along(t), function(i, j) as.integer(y[i] <= t[j])))
   }
 }
+
+#'@return numeric matrix, \code{retval[j,i]} = \eqn{phi_{3i}(y[j], b)}
+phi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, gamma.hat.origin = NULL, fi.seq.origin = NULL, bi = NULL, Zi = NULL,...) {
+#   browser()
+  m <- sapply(obj@t, length)
+  n <- length(m)
+  X <- obj@X[,-1]
+  y <- obj@y
+  if (is.null(F.hat)) F.hat <- obj$F.hat
+  if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
+  if (is.null(gamma.hat.origin)) gamma.hat.origin <- obj$U.hat()
+  gamma.hat <- gamma.hat.origin[-1]
+  if (is.null(bi)) {
+    b.hat <- b.hat.gen(obj)
+    bi <- lapply(1:n, function(i) Vectorize(b.hat(i)))
+  }
+  #bi.y[i,j] == bi[[j]](obj@y[i])
+  bi.y <- sapply(1:n, function(i) bi[[i]](obj@y)) 
+  if (is.null(fi.seq.origin)) fi.seq.origin <- fi.hat(obj, gamma = gamma.hat.origin, ...)
+  fi.seq <- fi.seq.origin[-1,]
+  if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat, gamma.hat = gamma.hat, ...)
+  m.F.hat.y.inv <- m * F.hat.y.inv
+  indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
+  # term1.2.i <- function(i) as.vector(X %*% fi.seq[,i]) + bi[[i]](obj@y)
+  # stopifnot(all.equal(sapply(1:n, term1.2.i), X %*% fi.seq + bi.y))
+  # term1.2[,1] == term1.2.i(1)
+  term1.2 <- X %*% fi.seq + bi.y
+  exp.X.b.gamma.hat <- exp(as.vector(X %*% (b - gamma.hat)))
+  term2 <- term1.1 <- t(m.F.hat.y.inv * exp.X.b.gamma.hat * indicator.T)
+  # all.equal(as.vector(as.vector(term1.2[,1]) %*% t(term1.1) / n), term1[,1])
+  term1 <- term1.1 %*% term1.2 / n
+#   term2.i <- function(i) m.F.hat.y.inv[i] * exp.X.b.gamma.hat[i] * indicator.T[i,]
+#   all.equal(term2.i(3), term2[3,])
+  term3 <- as.vector(as.vector(Zi * exp(X %*% b)) %*% indicator.T) / n
+  retval <- term1 + term2 - term3 
+  return(retval)
+#   browser()
+#   function(i) {
+#     term1.2 <- as.vector(X %*% fi.seq[,i]) + bi.y[[i]] # independent of t
+#     # term1.1.t<- function(t) m.F.hat.y.inv * exp(as.vector(X %*% (b - gamma.hat))) * as.integer(y >= t)
+#     exp.X.b.gamma.hat <- exp(as.vector(X %*% (b - gamma.hat)))
+#     term1.1 <- m.F.hat.y.inv * exp.X.b.gamma.hat * indicator.T
+#     # stopifnot(sapply(1:n, function(i) all(term1.1[,i] == term1.1.t(obj@y[i]))))  
+#     term1 <- as.vector(term1.2 %*% term1.1)/n
+#     term2 <- m.F.hat.y.inv[i] * exp.X.b.gamma.hat[i] * indicator.T[i,]
+# #       term3.t <- Vectorize(function(t) mean(Zi * exp(as.vector(X %*% b)) * as.integer(y >= t)))
+#     term3 <- as.vector(as.vector(Zi * exp(X %*% b)) %*% indicator.T) / n
+# #       stopifnot(isTRUE(all.equal(term3.t(y), term3)))
+#     term1 + term2 - term3
+#   }
+}
