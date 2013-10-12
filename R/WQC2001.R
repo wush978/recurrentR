@@ -46,11 +46,18 @@ F.hat <- function(obj) {
 	return(retval)
 }
 
+F.hat.y.inv <- function(obj, F.hat = NULL, ...) {
+  if (is.null(F.hat)) F.hat <- obj$F.hat
+  F.hat.y <- sapply(obj@y, F.hat)
+  retval <- 1/F.hat.y
+  retval[F.hat.y == 0] <- 0
+  return(retval)
+}
+
 Lambda.hat <- function(obj, bootstrap = FALSE) {
 	F.hat <- obj$F.hat
 	m <- sapply(obj@t, length)
-	y.inv <- 1 / F.hat(obj@y)
-	if (any(is.nan(y.inv))) stop("TODO: ill condition")
+	y.inv <- F.hat.y.inv(obj, F.hat)
 	if (ncol(obj@X) == 0) {
 		Lambda.hat.T_0 <- mean(m * y.inv)
 	} else {
@@ -93,12 +100,8 @@ U.hat <- function(obj) {
 		m <- sapply(obj@t, length)
 		y <- obj@y
 		F.hat <- obj$F.hat
-		F.hat.y <- F.hat(y)
-    if (sum(F.hat.y == 0) > 0) {
-      stopifnot(m[F.hat.y == 0] == 0)
-    }
-		b <- m / F.hat.y
-    b[is.nan(b)] <- 0
+		F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
+		b <- m * F.hat.y.inv
 		estimate <- U.hat.solve(obj@X, b, tol)
 		if (!bootstrap) {
 			return(estimate)
@@ -182,11 +185,11 @@ c.hat.gen <- function(obj, F.hat = NULL, bi.gen = NULL) {
 	if (is.null(bi.gen)) bi.gen <- b.hat.gen(obj)
 	if (is.null(F.hat)) F.hat <- obj$F.hat
 	Lambda.hat.T_0 <- obj$Lambda.hat(obj@T_0)
-	F.hat.y <- F.hat(obj@y)
+	F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
 	return(function(i) {
 		bi <- bi.gen(i)
 		bi.y <- sapply(obj@y, function(y) bi(y))
-		mean(bi.y * m / F.hat.y) + m[i] / F.hat.y[i] - Lambda.hat.T_0
+		mean(bi.y * m * F.hat.y.inv) + m[i] * F.hat.y.inv[i] - Lambda.hat.T_0
 	})	
 }
 
@@ -210,12 +213,11 @@ e.hat.gen <- function(obj, F.hat = NULL, bi.gen = NULL, w = NULL, gamma = NULL) 
 	if (is.null(w)) w <- rep(1, length(obj@y)) else stopifnot(length(w) == length(obj@y))
 	if (is.null(gamma)) gamma <- obj$U.hat() else stopifnot(length(gamma) == ncol(obj@X))
 	m <- sapply(obj@t, length)
-	F.hat.y <- F.hat(obj@y)
+	F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
 	return(function(i) {
 		bi <- bi.gen(i)
-		term_1 <- (w * m * sapply(obj@y, bi) / F.hat.y)
-    term_1[F.hat.y == 0] <- 0
-		term_2 <- ifelse(F.hat.y[i] != 0, m[i] /  F.hat.y[i], 0)
+		term_1 <- (w * m * sapply(obj@y, bi) * F.hat.y.inv)
+		term_2 <- m[i] *  F.hat.y.inv[i]
 		as.vector(term_1 %*% obj@X) / length(obj@y) + (w[i] * obj@X[i,] * (term_2  - exp(obj@X[i,] %*% gamma)))
 	})	
 }
