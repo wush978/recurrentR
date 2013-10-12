@@ -88,25 +88,6 @@ U.hat.solve <- function(X, b, tol, verbose = FALSE, gamma = NULL) {
 	return(temp$x)
 }
 
-sapply_pb <- function(X, FUN, ...)
-{
-	env <- environment()
-	pb_Total <- length(X)
-	counter <- 0
-	pb <- txtProgressBar(min = 0, max = pb_Total, style = 3)
-	
-	wrapper <- function(...){
-		curVal <- get("counter", envir = env)
-		assign("counter", curVal +1 ,envir=env)
-		setTxtProgressBar(get("pb", envir=env), curVal +1)
-		FUN(...)
-	}
-	res <- sapply(X, wrapper, ...)
-	close(pb)
-	res
-}
-
-
 U.hat <- function(obj) {
 	function(bootstrap = FALSE, B = 100, error.measurement.function = stats::sd, tol=1e-4) {
 		m <- sapply(obj@t, length)
@@ -123,7 +104,7 @@ U.hat <- function(obj) {
 			return(estimate)
 		}
 		obj.b <- obj$bootstrap(B)
-		U.hat.bootstrap.result <- sapply_pb(obj.b, function(obj) {
+		U.hat.bootstrap.result <- sapply(obj.b, function(obj) {
 			obj$U.hat(B = B)
 		})
 		error.measurement = apply(U.hat.bootstrap.result, 1, error.measurement.function)
