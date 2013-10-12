@@ -12,9 +12,10 @@ Z.true.list <- list()
 T_0.list <- list()
 n <- 100
 set.seed(1)
+T_0 <- 40
 for(i in 1:B) {
   temp <- local({
-    T_0 <- rpois(1, 40)
+    
     h <- function(t) rep(1/T_0, length(t))
     gen_z <- function() runif(1, 0.5, 1.5)
     beta <- c(1, -1)
@@ -42,7 +43,6 @@ for(i in 1:B) {
   })
   obj.list[[i]] <- temp$obj
   Z.true.list[[i]] <- temp$Z.true
-  T_0.list[[i]] <- temp$T_0
 }
 beta.list <- list()
 pb <- txtProgressBar(max=length(obj.list))
@@ -53,4 +53,4 @@ for(i in seq_along(obj.list)) {
   setTxtProgressBar(pb, i)
 }
 close(pb)
-save(beta.list, obj.list, Z.true.list, T_0.list, file="data/obj.list.rda")
+save(beta.list, obj.list, Z.true.list, file="data/obj.list.rda")
