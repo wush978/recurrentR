@@ -188,7 +188,7 @@ phi_4i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
     term2 <- term1.1 <- t((m.F.hat.y.inv * exp.X.b.gamma.hat * X[,k]) * indicator.T)
     term1 <- term1.1 %*% term1.2 / n
     term3 <- as.vector(as.vector(Zi * X[,k] * exp(X %*% b)) %*% indicator.T) / n
-    retval <- t(t(term1 + term2) - term3)
+    retval <- term1 + term2 - matrix(term3, nrow=n, ncol=n)
     retval
   }
   retval <- sapply(1:ncol(X), retval.k, simplify="array")
@@ -236,9 +236,9 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
   retval.i <- function(i) {
     term1 <- obj@D[i] * X[i,]
     term3.num.1 <- phi_3i.y[,i]
-    term3 <- obj@D %*% (term3.num.1 * term3.num.2 / term3.dem^2) / n #!
+    term3 <- obj@D %*% (term3.num.1 * term3.num.2 / term3.dem^2) #!
     term4.num <- phi_4i.y[,i,]
-    term4 <- obj@D %*% (term4.num / term4.dem) #!
+    term4 <- obj@D %*% (term4.num / term4.dem)  #!
     term5 <- obj@D[i] * term5.num[i,] / term5.dem[i]
     as.vector(term1 - term2 + term3 - term4 - term5 + term6)
   }
