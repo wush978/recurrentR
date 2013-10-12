@@ -10,9 +10,7 @@ Zi.hat <- function(obj, F.hat = NULL, gamma.hat = NULL, ...) {
   if (is.null(F.hat)) F.hat <- obj$F.hat
   if (is.null(gamma.hat)) gamma.hat <- obj$U.hat()[-1]
   m <- sapply(obj@t, length)
-  F.hat.y <- F.hat(obj@y)
-  F.hat.y.inv <- 1/F.hat.y
-  F.hat.y.inv[F.hat.y == 0] <- 0
+  F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
   m * F.hat.y.inv / exp(obj@X[,-1] %*% gamma.hat)
 }
 
