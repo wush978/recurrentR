@@ -236,9 +236,9 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
   retval.i <- function(i) {
     term1 <- obj@D[i] * X[i,]
     term3.num.1 <- phi_3i.y[,i]
-    term3 <- obj@D %*% (term3.num.1 * term3.num.2 / term3.dem^2) #!
+    term3 <- obj@D %*% (term3.num.1 * term3.num.2 / term3.dem^2) #! no need to divide n because term3.dem^2 contains n^2
     term4.num <- phi_4i.y[,i,]
-    term4 <- obj@D %*% (term4.num / term4.dem)  #!
+    term4 <- obj@D %*% (term4.num / term4.dem) #!
     term5 <- obj@D[i] * term5.num[i,] / term5.dem[i]
     as.vector(term1 - term2 + term3 - term4 - term5 + term6)
   }
