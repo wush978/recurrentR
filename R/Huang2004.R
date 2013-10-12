@@ -103,8 +103,12 @@ H0.hat.gen <- function(obj, beta = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NU
   }
 }
 
+#'@title \eqn{\phi_{3i}}
 #'@return numeric matrix, \code{retval[j,i]} = \eqn{phi_{3i}(y[j], b)}
-phi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, gamma.hat.origin = NULL, fi.seq.origin = NULL, bi = NULL, Zi = NULL,...) {
+phi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
+                         gamma.hat.origin = NULL, fi.seq.origin = NULL, 
+                         bi = NULL, bi.y = NULL, Zi = NULL,
+                         indicator.T = NULL, ...) {
 #   browser()
   m <- sapply(obj@t, length)
   n <- length(m)
@@ -119,12 +123,12 @@ phi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, gamma.hat.ori
     bi <- lapply(1:n, function(i) Vectorize(b.hat(i)))
   }
   #bi.y[i,j] == bi[[j]](obj@y[i])
-  bi.y <- sapply(1:n, function(i) bi[[i]](obj@y)) 
+  if (is.null(bi.y)) bi.y <- sapply(1:n, function(i) bi[[i]](obj@y)) 
   if (is.null(fi.seq.origin)) fi.seq.origin <- fi.hat(obj, gamma = gamma.hat.origin, ...)
   fi.seq <- fi.seq.origin[-1,]
   if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat, gamma.hat = gamma.hat, ...)
   m.F.hat.y.inv <- m * F.hat.y.inv
-  indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
+  if (is.null(indicator.T)) indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
   # term1.2.i <- function(i) as.vector(X %*% fi.seq[,i]) + bi[[i]](obj@y)
   # stopifnot(all.equal(sapply(1:n, term1.2.i), X %*% fi.seq + bi.y))
   # term1.2[,1] == term1.2.i(1)
@@ -152,4 +156,112 @@ phi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, gamma.hat.ori
 # #       stopifnot(isTRUE(all.equal(term3.t(y), term3)))
 #     term1 + term2 - term3
 #   }
+}
+
+#! retval[j,i,k]
+phi_4i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
+                         gamma.hat.origin = NULL, fi.seq.origin = NULL, 
+                         bi = NULL, bi.y = NULL, Zi = NULL,
+                         indicator.T = NULL, ...) {
+  m <- sapply(obj@t, length)
+  n <- length(m)
+  X <- obj@X[,-1]
+  y <- obj@y
+  if (is.null(F.hat)) F.hat <- obj$F.hat
+  if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
+  if (is.null(gamma.hat.origin)) gamma.hat.origin <- obj$U.hat()
+  gamma.hat <- gamma.hat.origin[-1]
+  if (is.null(bi)) {
+    b.hat <- b.hat.gen(obj)
+    bi <- lapply(1:n, function(i) Vectorize(b.hat(i)))
+  }
+  #bi.y[i,j] == bi[[j]](obj@y[i])
+  if (is.null(bi.y)) bi.y <- sapply(1:n, function(i) bi[[i]](obj@y)) 
+  if (is.null(fi.seq.origin)) fi.seq.origin <- fi.hat(obj, gamma = gamma.hat.origin, ...)
+  fi.seq <- fi.seq.origin[-1,]
+  if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat, gamma.hat = gamma.hat, ...)
+  m.F.hat.y.inv <- m * F.hat.y.inv
+  if (is.null(indicator.T)) indicator.T <- indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
+  term1.2 <- X %*% fi.seq + bi.y
+  exp.X.b.gamma.hat <- exp(as.vector(X %*% (b - gamma.hat)))
+  retval.k <- function(k) {
+    term2 <- term1.1 <- t((m.F.hat.y.inv * exp.X.b.gamma.hat * X[,k]) * indicator.T)
+    term1 <- term1.1 %*% term1.2 / n
+    term3 <- as.vector(as.vector(Zi * X[,k] * exp(X %*% b)) %*% indicator.T) / n
+    retval <- t(t(term1 + term2) - term3)
+    retval
+  }
+  retval <- sapply(1:ncol(X), retval.k, simplify="array")
+  retval
+}
+
+phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
+                         gamma.hat.origin = NULL, fi.seq.origin = NULL, 
+                         bi = NULL, bi.y = NULL, Zi = NULL,
+                         indicator.T = NULL, ...) {
+  m <- sapply(obj@t, length)
+  n <- length(m)
+  X <- obj@X[,-1]
+  y <- obj@y
+  if (is.null(F.hat)) F.hat <- obj$F.hat
+  if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
+  if (is.null(gamma.hat.origin)) gamma.hat.origin <- obj$U.hat()
+  gamma.hat <- gamma.hat.origin[-1]
+  if (is.null(bi)) {
+    b.hat <- b.hat.gen(obj)
+    bi <- lapply(1:n, function(i) Vectorize(b.hat(i)))
+  }
+  #bi.y[i,j] == bi[[j]](obj@y[i])
+  if (is.null(bi.y)) bi.y <- sapply(1:n, function(i) bi[[i]](obj@y)) 
+  if (is.null(fi.seq.origin)) fi.seq.origin <- fi.hat(obj, gamma = gamma.hat.origin, ...)
+  fi.seq <- fi.seq.origin[-1,]
+  if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat, gamma.hat = gamma.hat, ...)
+  m.F.hat.y.inv <- m * F.hat.y.inv
+  if (is.null(indicator.T)) indicator.T <- indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
+  phi_3i.y <- phi_3i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
+                           gamma.hat.origin = gamma.hat.origin, 
+                           fi.seq.origin = fi.seq.origin, 
+                           bi = bi, bi.y = bi.y, Zi = Zi,
+                           indicator.T = indicator.T, ...)
+  phi_4i.y <- phi_4i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
+                           gamma.hat.origin = gamma.hat.origin, 
+                           fi.seq.origin = fi.seq.origin, 
+                           bi = bi, bi.y = bi.y, Zi = Zi,
+                           indicator.T = indicator.T, ...)
+  term2 <- obj@D %*% X / n
+  Z.exp.X.beta.I.Y.geq.s <- t(as.vector(Zi * exp(X %*% b)) * indicator.T)
+  term6.num <- term5.num <- term3.num.2 <- Z.exp.X.beta.I.Y.geq.s %*% X
+  term6.dem <- term5.dem <- term4.dem <- term3.dem <- as.vector(Z.exp.X.beta.I.Y.geq.s %*% rep(1, n))
+  term6 <- obj@D %*% (term6.num / term6.dem) / n
+  retval.i <- function(i) {
+    term1 <- obj@D[i] * X[i,]
+    term3.num.1 <- phi_3i.y[,i]
+    term3 <- obj@D %*% (term3.num.1 * term3.num.2 / term3.dem^2) / n #!
+    term4.num <- phi_4i.y[,i,]
+    term4 <- obj@D %*% (term4.num / term4.dem) #!
+    term5 <- obj@D[i] * term5.num[i,] / term5.dem[i]
+    as.vector(term1 - term2 + term3 - term4 - term5 + term6)
+  }
+  t(sapply(1:n, retval.i))
+}
+
+Sigma.hat <- function(obj, b, ...) {
+  phi_i.y <- phi_i.y.gen(obj, b, ...)
+  n <- nrow(phi_i.y)
+  var(phi_i.y) * (n-1) / n
+}
+
+#'@export
+Huang2004 <- function(obj) {
+  n <- length(obj@y)
+  F.hat <- obj$F.hat
+  gamma.hat.origin <- obj$U.hat()
+  Zi <- Zi.hat(obj, F.hat)
+  Gamma.hat <- Gamma.hat.gen(obj, Zi)
+  beta.hat <- BorrowStrengthMethod(obj, Gamma.hat = Gamma.hat, Zi = Zi, 
+                                   F.hat = F.hat, gamma.hat = gamma.hat.origin[-1])
+  H0.hat <- H0.hat.gen(obj, beta=beta.hat, Zi=Zi)
+  Sigma <- Sigma.hat(obj, beta.hat)
+  Gamma <- solve(Gamma.hat(beta.hat))
+  return(list(beta.hat=beta.hat, H0.hat=H0.hat, beta.hat.var=(Gamma %*% Sigma %*% t(Gamma)) / n))
 }
