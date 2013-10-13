@@ -41,13 +41,14 @@ U.hat.gen <- function(obj, Zi = NULL, ...) {
 Gamma.hat.gen <- function(obj, Zi = NULL, ...) {
   if (is.null(Zi)) Zi <- Zi.hat(obj, ...)
   X <- obj@X[,-1]
+  p <- ncol(X)
   y <- obj@y
   n <- length(y)
   indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
   function(beta) {
     term_dem.mat <- t(as.vector(Zi * exp(X %*% beta)) * indicator.T)
     term_dem.i <- as.vector(term_dem.mat %*% rep(1, n))#apply(term_dem.mat, 1, sum)
-    term_1 <- matrix(sapply(1:n, function(i)t(X) %*% (term_dem.mat[i,] * X)) %*% (obj@D/term_dem.i), 2, 2)
+    term_1 <- matrix(sapply(1:n, function(i) t(X) %*% (term_dem.mat[i,] * X)) %*% (obj@D/term_dem.i), p, p)
     term_2_num.i.tmp <- term_dem.mat %*% X # row vector is num of term_2 of U.hat(beta)
     term_2 <- t(term_2_num.i.tmp) %*% ((obj@D/term_dem.i^2) * term_2_num.i.tmp)
     (-term_1 + term_2) / n
