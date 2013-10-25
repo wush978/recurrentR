@@ -13,13 +13,13 @@ T_0.list <- list()
 n <- 100
 set.seed(1)
 T_0 <- 40
+gamma <- c(1, -1, 1)
+beta <- c(2, -3, 0)
 for(i in 1:B) {
   temp <- local({
     
     h <- function(t) rep(1/T_0, length(t))
     gen_z <- function() rexp(1)
-    gamma <- c(1, -1, 3)
-    beta <- c(2, -3, 0)
     X <- cbind(sin(sample(1:n, n, TRUE)), sample(c(0, 1), n, TRUE), rnorm(n))
     
     y <- rpois(n, T_0)
@@ -29,9 +29,9 @@ for(i in 1:B) {
     Z.true <- sapply(1:n, function(i) gen_z())
     for(i in seq_along(y)) {
       z <- Z.true[i]
-      lambda_i <- function(t) z * lambda(t) * exp(as.vector(X[i,] %*% beta))
+      lambda_i <- function(t) z * lambda(t) * exp(as.vector(X[i,] %*% gamma))
       # 	h_i <- function(t) z * h(t) * exp(as.vector(X[i,] %*% gamma))
-      h_i <- 1/T_0 * (z * Lambda(T_0)) * exp(as.vector(X[i,]%*%gamma))
+      h_i <- 1/T_0 * (z * Lambda(T_0)) * exp(as.vector(X[i,] %*% beta))
       D[i] <- rexp(1,  h_i)
       t[[i]] <- gen_inhomo_poisson(lambda_i, min(D[i], y[i]), lambda_i(0))
     }
@@ -44,4 +44,4 @@ for(i in 1:B) {
   obj.list[[i]] <- temp$obj
   Z.true.list[[i]] <- temp$Z.true
 }
-save(obj.list, Z.true.list, file="data/obj.list2.rda")
+save(obj.list, Z.true.list, beta, gamma, Lambda, file="data/obj.list2.rda")

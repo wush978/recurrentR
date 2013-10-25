@@ -12,9 +12,9 @@ BEGIN_RCPP
     SEXP __sexp_result;
     {
         Rcpp::RNGScope __rngScope;
-        NumericVector s = Rcpp::as<NumericVector >(sSEXP);
-        NumericVector y = Rcpp::as<NumericVector >(ySEXP);
-        IntegerVector m = Rcpp::as<IntegerVector >(mSEXP);
+        Rcpp::traits::input_parameter< NumericVector >::type s(sSEXP );
+        Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP );
+        Rcpp::traits::input_parameter< IntegerVector >::type m(mSEXP );
         SEXP __result = eval_N(s, y, m);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
@@ -29,11 +29,11 @@ BEGIN_RCPP
     SEXP __sexp_result;
     {
         Rcpp::RNGScope __rngScope;
-        Function g = Rcpp::as<Function >(gSEXP);
-        NumericVector x = Rcpp::as<NumericVector >(xSEXP);
-        NumericVector p = Rcpp::as<NumericVector >(pSEXP);
-        double a = Rcpp::as<double >(aSEXP);
-        double b = Rcpp::as<double >(bSEXP);
+        Rcpp::traits::input_parameter< Function >::type g(gSEXP );
+        Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP );
+        Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP );
+        Rcpp::traits::input_parameter< double >::type a(aSEXP );
+        Rcpp::traits::input_parameter< double >::type b(bSEXP );
         SEXP __result = step_integrate_kernel(g, x, p, a, b);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }

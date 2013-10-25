@@ -83,10 +83,10 @@ BorrowStrengthMethod <- function(obj, U.hat = NULL, Gamma.hat = NULL, Zi = NULL,
   }
   temp <- nleqslv(rep(0, ncol(obj@X) - 1), U.hat, jac=Gamma.hat)
   if(verbose) {
-    cat(sprintf("Check if gamma is solved correctly: %s \n", paste(U.hat(temp$x), collapse=",")))
+    cat(sprintf("Check if beta is solved correctly: %s \n", paste(U.hat(temp$x), collapse=",")))
     cat(sprintf("message of nleqslv: %s ", temp$message))
   }
-  if (sum(abs(U.hat(temp$x))) > tol) stop("Failed to converge during solving gamma")
+  if (sum(abs(U.hat(temp$x))) > tol) stop("Failed to converge during solving beta")
   return(temp$x)
 }
 
