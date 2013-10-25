@@ -104,9 +104,9 @@ H0.hat.gen <- function(obj, beta = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NU
   }
 }
 
-#'@title \eqn{\phi_{3i}}
-#'@return numeric matrix, \code{retval[j,i]} = \eqn{phi_{3i}(y[j], b)}
-phi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
+#'@title \eqn{\psi_{3i}}
+#'@return numeric matrix, \code{retval[j,i]} = \eqn{psi_{3i}(y[j], b)}
+psi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
                          gamma.hat.origin = NULL, fi.seq.origin = NULL, 
                          bi = NULL, bi.y = NULL, Zi = NULL,
                          indicator.T = NULL, ...) {
@@ -160,7 +160,7 @@ phi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
 }
 
 #! retval[j,i,k]
-phi_4i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
+psi_4i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
                          gamma.hat.origin = NULL, fi.seq.origin = NULL, 
                          bi = NULL, bi.y = NULL, Zi = NULL,
                          indicator.T = NULL, ...) {
@@ -196,7 +196,7 @@ phi_4i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
   retval
 }
 
-phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
+psi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
                          gamma.hat.origin = NULL, fi.seq.origin = NULL, 
                          bi = NULL, bi.y = NULL, Zi = NULL,
                          indicator.T = NULL, ...) {
@@ -219,12 +219,12 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
   if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat, gamma.hat = gamma.hat, ...)
   m.F.hat.y.inv <- m * F.hat.y.inv
   if (is.null(indicator.T)) indicator.T <- indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
-  phi_3i.y <- phi_3i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
+  psi_3i.y <- psi_3i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
                            gamma.hat.origin = gamma.hat.origin, 
                            fi.seq.origin = fi.seq.origin, 
                            bi = bi, bi.y = bi.y, Zi = Zi,
                            indicator.T = indicator.T, ...)
-  phi_4i.y <- phi_4i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
+  psi_4i.y <- psi_4i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
                            gamma.hat.origin = gamma.hat.origin, 
                            fi.seq.origin = fi.seq.origin, 
                            bi = bi, bi.y = bi.y, Zi = Zi,
@@ -236,9 +236,9 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
   term6 <- obj@D %*% (term6.num / term6.dem) / n
   retval.i <- function(i) {
     term1 <- obj@D[i] * X[i,]
-    term3.num.1 <- phi_3i.y[,i]
+    term3.num.1 <- psi_3i.y[,i]
     term3 <- obj@D %*% (term3.num.1 * term3.num.2 / term3.dem^2) #! no need to divide n because term3.dem^2 contains n^2
-    term4.num <- phi_4i.y[,i,]
+    term4.num <- psi_4i.y[,i,]
     term4 <- obj@D %*% (term4.num / term4.dem) #!
     term5 <- obj@D[i] * term5.num[i,] / term5.dem[i]
     as.vector(term1 - term2 + term3 - term4 - term5 + term6)
@@ -247,9 +247,82 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
 }
 
 Sigma.hat <- function(obj, b, ...) {
-  phi_i.y <- phi_i.y.gen(obj, b, ...)
-  n <- nrow(phi_i.y)
-  var(phi_i.y) * (n-1) / n
+  psi_i.y <- psi_i.y.gen(obj, b, ...)
+  n <- nrow(psi_i.y)
+  var(psi_i.y) * (n-1) / n
+}
+
+phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL, 
+                        gamma.hat.origin = NULL, fi.seq.origin = NULL, 
+                        bi = NULL, bi.y = NULL, Zi = NULL, Gamma.hat = NULL,
+                        indicator.T = NULL, ...) {
+  m <- sapply(obj@t, length)
+  n <- length(m)
+  X <- obj@X[,-1]
+  y <- obj@y
+  if (is.null(F.hat)) F.hat <- obj$F.hat
+  if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
+  if (is.null(gamma.hat.origin)) gamma.hat.origin <- obj$U.hat()
+  gamma.hat <- gamma.hat.origin[-1]
+  if (is.null(bi)) {
+    b.hat <- b.hat.gen(obj)
+    bi <- lapply(1:n, function(i) Vectorize(b.hat(i)))
+  }
+  #bi.y[i,j] == bi[[j]](obj@y[i])
+  if (is.null(bi.y)) bi.y <- sapply(1:n, function(i) bi[[i]](obj@y)) 
+  if (is.null(fi.seq.origin)) fi.seq.origin <- fi.hat(obj, gamma = gamma.hat.origin, ...)
+  fi.seq <- fi.seq.origin[-1,]
+  if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat, gamma.hat = gamma.hat, ...)
+  if (is.null(Gamma.hat)) Gamma.hat <- Gamma.hat.gen(obj, Zi) 
+  m.F.hat.y.inv <- m * F.hat.y.inv
+  if (is.null(indicator.T)) indicator.T <- indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
+  psi_3i.y <- psi_3i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
+                           gamma.hat.origin = gamma.hat.origin, 
+                           fi.seq.origin = fi.seq.origin, 
+                           bi = bi, bi.y = bi.y, Zi = Zi,
+                           indicator.T = indicator.T, ...)
+  Z.exp.X.beta.I.Y.geq.s <- t(as.vector(Zi * exp(X %*% b)) * indicator.T)
+  psi_i.y <- psi_i.y.gen(obj, b, F.hat.y.inv = F.hat.y.inv, F.hat = F.hat, 
+                         gamma.hat.origin = gamma.hat.origin, 
+                         fi.seq.origin = fi.seq.origin, bi = bi, bi.y = bi.y, 
+                         Zi = Zi, indicator.T = indicator.T, ...)
+#   term6.num <- term5.num <- term3.num.2 <- Z.exp.X.beta.I.Y.geq.s %*% X
+#   term6.dem <- term5.dem <- term4.dem <- term3.dem <- as.vector(Z.exp.X.beta.I.Y.geq.s %*% rep(1, n))
+#   term6 <- obj@D %*% (term6.num / term6.dem) / n
+#   term5 <- obj@D[i] * term5.num[i,] / term5.dem[i]
+  term4.num.1 <- Z.exp.X.beta.I.Y.geq.s %*% X
+  term4.dem.1 <- term3.dem <- term2.dem <- term1.dem <- as.vector(Z.exp.X.beta.I.Y.geq.s %*% rep(1, n))
+  #     obj@D * indicator.T[1,] == (obj@D * t(indicator.T))[,1]
+  #     obj@D * indicator.T[2,] == (obj@D * t(indicator.T))[,2]
+  #     obj@D * indicator.T[3,] == (obj@D * t(indicator.T))[,3]
+  D.indicator.T <- t(obj@D * t(indicator.T))
+  retval.i <- function(i) { # t = y[j] 
+    term1.num <- psi_3i.y[,i]
+#     y.t <- ifelse(y <= y[3], 1, 0) # indicator.T[3,] == y.t
+#     obj@D * y.t == D.indicator.T[3,]
+#     term1 <- n * (obj@D * y.t) %*% (term1.num / term1.dem^2) #! term3.dem^2 contains n^2
+    term1 <- as.vector(n * D.indicator.T %*% (term1.num / term1.dem^2))
+#     term2 == sapply(y, function(t) {
+#       y.t <- ifelse(y <= t, 1, 0) # D.indicator.T[j,]
+#       n * obj@D[i] * y.t[i] / term2.dem[i]
+#     })
+    term2 <- n * obj@D[i] * indicator.T[,i] / term2.dem[i]
+#     term3[3] == (obj@D * y.t) %*% (1 / term3.dem)
+    term3 <- as.vector(D.indicator.T %*% (1 / term3.dem))
+    #
+#     term4.1 <- (obj@D * y.t) %*% (term4.num.1 / term4.dem.1^2) # == term4.1[3,]
+#     term4.2 <- solve(Gamma.hat(b))
+#     term4.3 <- psi_i.y[3,]
+#     term4.1 %*% term4.2 %*% term4.3
+    #
+    term4.1 <- D.indicator.T %*% (term4.num.1 / term4.dem.1^2)
+    term4.2 <- solve(Gamma.hat(b))
+    term4.3 <- t(psi_i.y)
+    term4 <- diag((term4.1 %*% term4.2) %*% term4.3)
+    term1 + term2 + term3 + term4
+  }  
+  retval <- sapply(1:n, retval.i) # retval[,i] -- retval.i(i)
+  retval
 }
 
 #'@export
@@ -264,5 +337,9 @@ Huang2004 <- function(obj) {
   H0.hat <- H0.hat.gen(obj, beta=beta.hat, Zi=Zi)
   Sigma <- Sigma.hat(obj, beta.hat)
   Gamma <- solve(Gamma.hat(beta.hat))
-  return(list(beta.hat=beta.hat, H0.hat=H0.hat, beta.hat.var=(Gamma %*% Sigma %*% t(Gamma)) / n))
+  H0.hat.y <- sapply(obj@y, H0.hat)
+  phi_i.y <- phi_i.y.gen(obj, beta.hat)
+  H0.hat.y.sd <- apply(phi_i.y / n, 1, sd)
+  i.y <- order(y)
+  return(list(beta.hat=beta.hat, y = y[i.y], H0.hat.y=H0.hat.y[i.y], H0.hat.y.sd=H0.hat.y.sd[i.y], beta.hat.var=(Gamma %*% Sigma %*% t(Gamma)) / n))
 }
