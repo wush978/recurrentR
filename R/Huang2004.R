@@ -11,7 +11,7 @@ Zi.hat <- function(obj, F.hat = NULL, gamma.hat = NULL, ...) {
   if (is.null(gamma.hat)) gamma.hat <- obj$U.hat()[-1]
   m <- sapply(obj@t, length)
   F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
-  m * F.hat.y.inv / exp(obj@X[,-1] %*% gamma.hat)
+  m * F.hat.y.inv / exp(obj@X[,-1, drop = FALSE] %*% gamma.hat)
 }
 
 #'@title Formulat(3) in Huang2004
@@ -21,7 +21,7 @@ Zi.hat <- function(obj, F.hat = NULL, gamma.hat = NULL, ...) {
 #'@return numeric vector with length \code{ncol(obj@X) - 1}
 U.hat.gen <- function(obj, Zi = NULL, ...) {
   if (is.null(Zi)) Zi <- Zi.hat(obj, ...)
-  X <- obj@X[,-1]
+  X <- obj@X[,-1, drop = FALSE]
   y <- obj@y
   n <- length(y)
   term_1 <- obj@D %*% X / n
@@ -40,7 +40,7 @@ U.hat.gen <- function(obj, Zi = NULL, ...) {
 
 Gamma.hat.gen <- function(obj, Zi = NULL, ...) {
   if (is.null(Zi)) Zi <- Zi.hat(obj, ...)
-  X <- obj@X[,-1]
+  X <- obj@X[,-1, drop = FALSE]
   p <- ncol(X)
   y <- obj@y
   n <- length(y)
@@ -93,7 +93,7 @@ BorrowStrengthMethod <- function(obj, U.hat = NULL, Gamma.hat = NULL, Zi = NULL,
 H0.hat.gen <- function(obj, beta = NULL, Zi = NULL, F.hat = NULL, gamma.hat = NULL, ...) {
   if (is.null(Zi)) Zi <- Zi.hat(obj, F.hat = F.hat, gamma.hat = gamma.hat, ...)
   if (is.null(beta)) beta <- BorrowStrengthMethod(obj, Zi=Zi)
-  X <- obj@X[,-1]
+  X <- obj@X[,-1, drop = FALSE]
   y <- obj@y
   n <- length(y)
   indicator.T <- outer(1:n, 1:n, function(i, j) as.integer(y[i] >= y[j]))
@@ -113,7 +113,7 @@ psi_3i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
 #   browser()
   m <- sapply(obj@t, length)
   n <- length(m)
-  X <- obj@X[,-1]
+  X <- obj@X[,-1, drop = FALSE]
   y <- obj@y
   if (is.null(F.hat)) F.hat <- obj$F.hat
   if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
@@ -166,7 +166,7 @@ psi_4i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
                          indicator.T = NULL, ...) {
   m <- sapply(obj@t, length)
   n <- length(m)
-  X <- obj@X[,-1]
+  X <- obj@X[,-1, drop = FALSE]
   y <- obj@y
   if (is.null(F.hat)) F.hat <- obj$F.hat
   if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
@@ -200,9 +200,10 @@ psi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
                          gamma.hat.origin = NULL, fi.seq.origin = NULL, 
                          bi = NULL, bi.y = NULL, Zi = NULL,
                          indicator.T = NULL, ...) {
+#   browser()
   m <- sapply(obj@t, length)
   n <- length(m)
-  X <- obj@X[,-1]
+  X <- obj@X[,-1, drop = FALSE]
   y <- obj@y
   if (is.null(F.hat)) F.hat <- obj$F.hat
   if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
@@ -243,7 +244,7 @@ psi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
     term5 <- obj@D[i] * term5.num[i,] / term5.dem[i]
     as.vector(term1 - term2 + term3 - term4 - term5 + term6)
   }
-  t(sapply(1:n, retval.i))
+  if (ncol(X) > 1) t(sapply(1:n, retval.i)) else matrix(sapply(1:n, retval.i), ncol=1)
 }
 
 Sigma.hat <- function(obj, b, ...) {
@@ -258,7 +259,7 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
                         indicator.T = NULL, ...) {
   m <- sapply(obj@t, length)
   n <- length(m)
-  X <- obj@X[,-1]
+  X <- obj@X[,-1, drop = FALSE]
   y <- obj@y
   if (is.null(F.hat)) F.hat <- obj$F.hat
   if (is.null(F.hat.y.inv)) F.hat.y.inv <- F.hat.y.inv(obj, F.hat)
@@ -317,7 +318,8 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
     #
     term4.1 <- D.indicator.T %*% (term4.num.1 / term4.dem.1^2)
     term4.2 <- solve(Gamma.hat(b))
-    term4.3 <- t(psi_i.y)
+    term4.3 <- t(psi_i.y) # 2 * 100
+#     browser()
     term4 <- diag((term4.1 %*% term4.2) %*% term4.3)
     term1 + term2 + term3 + term4
   }  
@@ -327,6 +329,7 @@ phi_i.y.gen <- function(obj, b, F.hat.y.inv = NULL, F.hat = NULL,
 
 #'@export
 Huang2004 <- function(obj) {
+  y <- obj@y
   n <- length(obj@y)
   F.hat <- obj$F.hat
   gamma.hat.origin <- obj$U.hat()
