@@ -5,7 +5,7 @@
 #'@param X data.frame. The time independent covariate of subjects.
 #'@param y numeric vector. The censor time.
 #'@param t list. The time of recurrent events.
-#'@param W data.frame. The time dependent covariates.
+#'@param W list of functions The time dependent covariates.
 #'@param T_0 numeric value. The time of termination of experients.
 #'@param D numeric vector. The failure time.
 #'@export
@@ -29,7 +29,7 @@ setClass(
 		X = "matrix",
 		y = "numeric",
 		t = "list",
-		W = "data.frame",
+		W = "list",
 		T_0 = "numeric",
 		D = "logical",
 		B = "list"
