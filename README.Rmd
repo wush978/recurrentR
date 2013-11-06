@@ -1,0 +1,181 @@
+Technical Note of *recurrentR*
+========================================================
+
+```{r pre, include=FALSE}
+library(knitr)
+opts_chunk$set(eval=FALSE)
+```
+
+# Introduction
+
+The package *recurrentR* implements the statistical inference publushed in the following papers:
+
+- [@Wang2001]
+- [@Huang2004]
+- [@Huang2010]
+
+TODO: Describe some background of non-parametric analysis of recurrent event data here.
+
+This technical note unifies the mathematical notations in these three paper and describes the implemented mathematical formulas closely.
+
+# Data
+
+Without loss of generality, we assume that there is a dataset of recurrent event data containing $n$ instances. Each instance, $i$, includes the following fields:
+
+- Censor time, $y_i$. TODO: explanation of censor time
+- Censor type, $D_i$. TODO: 
+- Time period of observation: $[0, T_0]$.
+- Recurrent event time, $t_{i,1}$, $t_{i,2}$, ..., $t_{i,m_i}$. These are the realization of poisson process $N_i(.)$ TODO:
+- $q$-dim vector of time independent covariates, $W_i$. We assume that $W_i \in \mathbb{R}^{q \times 1}$. For simplicity, we denote $W \in \mathbb{R}^{q \times n}$ as the corresponding matrix. TODO:
+- $p$-dim time-dependent covariate process, $X_i(t)$. We assme that $X_i(t) \in \mathbb{R}^{p \times 1}$. TODO:
+
+The field $X_i(t)$ is required for model of [@Huang2010]. The user could omit this field for model [@Wang2001] and [@Huang2004].
+
+In *recurrentR*, the data is stored in a S4-class object: `recurrent-data`. The following is the structure of `recurrent-data` with 100 instances, named `obj`:
+
+```
+Formal class 'recurrent-data' [package "recurrentR"] with 6 slots
+  ..@ W  : num [1:100, 1:2] 1 1 1 1 1 1 1 1 1 1 ...
+  ..@ y  : num [1:100] 9.1729 8.8428 10 10 0.0597 ...
+  ..@ t  :List of 100
+  .. .. [list output truncated]
+  ..@ X  :List of 100
+  .. .. [list output truncated]
+  ..@ T_0: num 10
+  ..@ D  : logi [1:100] TRUE TRUE FALSE FALSE TRUE TRUE ...
+```
+
+The name of the slot is consistent to the variable name described above. For example, for instance 1:
+
+- The censor time $y_1$ is `obj@y[1]`.
+- The censor type $D_1$ is `obj@D[1]`. `FALSE` stands for informative censoring(TODO: verify!!!).
+- The recurrent events $t_{1,1}, t_{1, 2}, ..., t_{1, m_1}$ is the numeric vector `obj@t[[1]]`.
+- The $T_0$ is `obj@T_0`
+- The $W_1$ is `obj@W[1,]`. And the $W \in \mathbb{R}^{q \times n}$ is `t(obj@W)`
+- The $X_1(t)$ is the function `obj@X[[1]]`
+
+The user could create the object with the following function:
+
+```{r create-object}
+str(create_recurrent_data)
+obj <- create_recurrent_data()
+obj
+```
+
+# Usage 
+
+## [@Wang2001]
+
+For each instance $i$, the occurrence of recurrent event follows a inhomogenous poisson process with the following intensity:
+
+$$\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)$$
+
+where:
+
+- $z_i$ is a nonnegative-valued latent variable such that $E(z_i | W_i) = E(z_i)$.
+- The baseline intensity function $lambda_0(t)$ is a probability function:
+    - $\lambda_0(t) \neq 0$
+    - $\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1$
+- $\gamma$ is a $\mathbb{R}^{1 \times q}$ vector.
+
+In *recurrentR*:
+
+```{r Wang2001}
+library(recurrentR)
+Wang2001(obj)
+```
+
+## [@Huang2004]
+
+The intensity is the same:
+
+$$\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)$$
+
+where:
+
+- $z_i$ is a nonnegative-valued latent variable such that $E(z_i | W_i) = E(z_i)$.
+- The baseline intensity function $lambda_0(t)$ is a probability function:
+    - $\lambda_0(t) \neq 0$
+    - $\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1$
+- $\gamma$ is a $\mathbb{R}^{1 \times q}$ vector.
+
+Moreover, the hazard function of the censor time is modeled as
+
+$$\h_i(t) = h_0(t) z_i exp(W_i \alpha)$$
+
+where:
+
+- $\alpha$ is a $\mathbb{R}^{1 \times q}$ vector.
+
+Conditional on $(W_i, z_i)$, $N_i(.)$ and $y_i$ are independent.
+
+```{r Huang2004}
+library(recurrentR)
+Huang2004(obj)
+```
+
+## [@Huang2010]
+
+The intensity is:
+
+$$\lambda_i(t) = \lambda_0(t) z_i exp(X_i(t) \beta + \gamma W_i)$$
+
+where:
+
+- $z_i$ is a nonnegative-valued latent variable such that $E(z_i | W_i) = E(z_i)$.
+- The baseline intensity function $lambda_0(t)$ is a probability function:
+    - $\lambda_0(t) \neq 0$
+    - $\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1$
+- $\gamma$ is a $\mathbb{R}^{1 \times q}$ vector.
+- $\beta$ is a $\mathbb(R)^{1 \times p}$ vector.
+
+Conditional on $(W_i, z_i, X_i)$, $N_i(.)$ and $y_i$ are independent.
+
+```{r Huang2010}
+library(recurrentR)
+Huang2010(obj)
+```
+
+# Implementation Details
+
+## [@Wang2001]
+
+The inference are all included in the output of `Wang2001`.
+
+```{r}
+library(recurrentR)
+result <- Wang2001(obj)
+```
+
+Recall that $$\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)$$ and $$\Lambda_0(t) = \int_0^t \lambda_0(u) du$$. The nonparametric maximal likelihood estimator $\hat{\Lambda}_0(t)$ is:
+
+$$\hat{\Lambda}_0(t) = \prod_{s_{(l)} > t}(1 - \frac{d_{(l)}}{R_{(l)}})$$
+
+where:
+
+- $s_{(l)}$ is the ordered and distinct values of event times ${t_{ij}}$.
+- $d_{(l)}$ is the number of events occurred at $s_{(l)}$.
+- $R_{(l)}$ is the total number of events ${t_{i,j}}$ which satisfies $t_{ij} \leq s_{(l)} \leq y_i$.
+
+The user can obtain $\hat{\Lambda}_0(t)$:
+
+```{r}
+str(result$Lambda.hat)
+result$Lambda.hat(rexp(10))
+```
+
+The $\hat{\gamma}$ is estimated by solving the following equation:
+
+$$\frac{1}{n} \sum_{i=1}^n w_i (\begin{array}{c} 1 \\ W_i^T \end{array}) ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp((1, W_i)^T(\begin{array}{c} log(\mu_Z) \\ \gamma\end{array})) = 0 \in \mathbb{R}^{1 \times (q+1)}$$
+
+Let $$V(\gamma) = \frac{1}{n} \sum_{i=1}^n w_i (\begin{array}{c} 1 \\ W_i^T \end{array}) ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp((1, W_i)^T(\begin{array}{c} log(\mu_Z) \\ \gamma\end{array})),$$
+
+$$\frac{dV}{d\gamma}(\gamma) =$$
+
+The *recurrentR* solves $V(\gamma) = 0$ by the function `nleqslv` from the package *nleqslv*. The $\hat{\gamma}$ could be accessed by:
+
+```{r gamma.hat}
+result$gamma.hat
+```
+
+# Reference
