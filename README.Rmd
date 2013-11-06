@@ -261,4 +261,35 @@ For the asymptotic variance of $\hat{H}_0(t)$, we need
     
 Then the estimator of asymptotic variance of $\hat{H}_0(t)$ is the sample variance of $\frac{1}{n} \phi_i(t)$.
 
+## Huang2010
+
+Recall that the intensity is:
+
+$$\lambda_i(t) = z_i \lambda_0(t) exp(X_i(t) \beta + W_i \gamma)$$
+
+The estimator of $\hat{\beta}$ does not involve $W_i$ and $\gamma$.
+
+The derivative of logged pairwise pseudolikelihood is:
+
+$$g_{i,j}(\beta) = \sum_{k=1}^{m_i}{ \sum_{l=1}^{m_j}{ I(t_{i,k} \leq y_{i,j}) I(t_{j,l} \leq y_{i,j}) \rho_{i,j}(t_{i,k}, t_{j,l}) \frac{- exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta)}{1 + exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta)} } },$$
+
+where
+
+- $\rho_{i,j}(u, v) = X_i(v) + X_j(u) - X_i(u) - X_j(v)$
+
+Let $$S(\beta) = \frac{1}{\left(\begin{array}{c} n \\ 2 \end{array}\right)} \sum_{i < j}{g_{i,j}(\beta)},$$
+
+Then $$\frac{dS}{d\beta}(\beta) = \sum_{i<j} {\frac{dg_{i,j}}{d\beta}(\beta)} ,$$
+
+where:
+
+- $\frac{dg_{i,j}}{d\beta}(\beta) = \sum_{k=1}^{m_i}{ \sum_{l=1}^{m_j}{ I(t_{i,k} \leq y_{i,j}) I(t_{j,l} \leq y_{i,j}) \frac{- \rho_{i,j}(t_{i,k}, t_{j,l})^2 exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta)}{(1 + exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta))^2}  } }$
+
+The $\hat{\beta}$ is the one satisfies $S(\beta) = 0$.
+
+To obtain the asymptotic variance, we need:
+
+- $\hat{V_1} = \frac{4}{n}\sum_{i=1}^n{ \frac{1}{\left(\begin{array}{c}n-1 \\ 2 \end{array}\right)} \sum_{i < j < k}{g_{i,j}(\hat{\beta}) g_{i,k}(\hat{\beta})} }$
+- $\hat{V_2} = \frac{-1}{\left(\begin{array}{c}n \\ 2 \end{array}\right)} \sum_{i < k}{\frac{dg_{i,k}}{d\beta}(\hat{\beta})}$
+
 # Reference
