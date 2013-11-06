@@ -236,6 +236,29 @@ With $\hat{\alpha}$, the $\hat{H}_0(t)$ will be:
 
 $$\hat{H}_0(t) = \sum_{i=1}^n{D_i I(y_i \leq t) \frac{1}{\sum_{j=1}^n{\hat{z}_j exp(W_j \alpha) I(y_j \geq y_i)}}}.$$
 
+```{r}
+result <- Huang2004(obj)
+result$alpha.hat
+str(result$H0.hat)
+```
 
+To evaluate the asymptotic variance, we need:
+
+- $\psi_{3i}(t, \alpha) = \frac{1}{n}\sum_{j=1}^n{\frac{m_j}{\hat{Lambda}_0(y_j)} exp(W_j(\alpha - \gamma)) I(y_j \geq t) (W_j \hat{f}_i(\alpha) + b_i(y_j))} + \frac{m_i}{\hat{Lambda}_0(y_i)} exp(W_i(\alpha - \gamma)) I(y_i \geq t) - \frac{1}{n}\sum_{j=1}^n{\hat{z}_j exp(W_j \alpha) I(y_j \geq t)}$
+- $\psi_{4i}(t, \alpha) = \frac{1}{n}\sum_{j=1}^n{W_j \frac{m_j}{\hat{Lambda}_0(y_j)} exp(W_j(\alpha - \gamma)) I(y_j \geq t) (W_j \hat{f}_i(\alpha) + b_i(y_j))} + W_i \frac{m_i}{\hat{Lambda}_0(y_i)} exp(W_i(\alpha - \gamma)) I(y_i \geq t) - \frac{1}{n}\sum_{j=1}^n{W_j \hat{z}_j exp(W_j \alpha) I(y_j \geq t)}$
+- $\psi_i(\alpha) = W_i D_i - n^{-1}\sum_{j=1}^{n}{W_j D_j} + \sum_{j=1}^n{D_j \psi_{3i}(y_j, \alpha) \frac{\sum_{k=1}^n{W_k \hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}{(\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)})^2}} - \sum_{j=1}^n{D_j \frac{\psi_{4i}(y_j, \alpha)}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}} + \frac{1}{n} \sum_{j=1}^{n}{D_j \frac{\sum_{k=1}^n{W_k \hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}} - D_i \frac{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_i)}}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_i)}}$
+- $\psi^*(\alpha) = \frac{1}{n} \sum_{i=1}^n \psi_i(\alpha)$
+- $\hat{\Sigma}(\alpha) = n^{-1} \sum_{i=1}^n{(\psi_i(\alpha) - \psi^*(\alpha))(\psi_i(\alpha) - \psi^*(\alpha))^T}$
+
+According to [@Huang2004], the estimator of asymptotic variance of $\alpha$ will be:
+
+$$\frac{1}{n} \Gamma(\hat{\alpha})^{-1} \hat{\Sigma}(\hat{\alpha}) \Gamma(\hat{\alpha})^{-1}.$$
+
+For the asymptotic variance of $\hat{H}_0(t)$, we need
+
+- $\phi_i(t) = n \sum_{j=1}^n{D_j I(y_j \leq t) \frac{\psi_{3i}(y_j, \hat{\alpha})}{(\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j))^2}}} - \sum_{j=1}^n{D_j I(y_j \leq t) \frac{1}{\sum_{k=1}^n{ \hat{z}_k exp( W_k \alpha) I(y_k \geq y_j) }}} + D_i I(y_i \leq t) \frac{n}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_i)}} - \frac{d \hat{H}_0}{d \alpha}(t, \hat{\alpha}) \Gamma(\hat{\alpha})^{-1}\psi_i(\hat{\alpha})$
+    - $\frac{d\hat{H}_0}{d\alpha}(t, \alpha) = -\sum_{i=1}^n{D_i I(y_i \leq t) \frac{\sum_{j=1}^n{W_j \hat{z}_j exp(W_j \alpha) I(y_j \geq y_i)}}{(\sum_{j=1}^n{\hat{z}_j exp(W_j \alpha) I(y_j \geq y_i)})^2}}$
+    
+Then the estimator of asymptotic variance of $\hat{H}_0(t)$ is the sample variance of $\frac{1}{n} \phi_i(t)$.
 
 # Reference
