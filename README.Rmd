@@ -166,16 +166,76 @@ result$Lambda.hat(rexp(10))
 
 The $\hat{\gamma}$ is estimated by solving the following equation:
 
-$$\frac{1}{n} \sum_{i=1}^n w_i (\begin{array}{c} 1 \\ W_i^T \end{array}) ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp((1, W_i)^T(\begin{array}{c} log(\mu_Z) \\ \gamma\end{array})) = 0 \in \mathbb{R}^{1 \times (q+1)}$$
+$$\frac{1}{n} \sum_{i=1}^n w_i \bar{W}_i^T ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp(\bar{W}_i \bar{\gamma}) = 0 \in \mathbb{R}^{1 \times (q+1)},$$
 
-Let $$V(\gamma) = \frac{1}{n} \sum_{i=1}^n w_i (\begin{array}{c} 1 \\ W_i^T \end{array}) ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp((1, W_i)^T(\begin{array}{c} log(\mu_Z) \\ \gamma\end{array})),$$
+where:
 
-$$\frac{dV}{d\gamma}(\gamma) =$$
+- $\bar{W}_i = (1, W_i)$
+- $\bar{\gamma} = (\mu_Z, \gamma^T)^T$ and $E(z_i) = \mu_Z \forall i$.
 
-The *recurrentR* solves $V(\gamma) = 0$ by the function `nleqslv` from the package *nleqslv*. The $\hat{\gamma}$ could be accessed by:
+[@Wang2001] provides the best $w_i$ to estimate $\gamma$, but it involves $\gamma$ which might produce potential instability. In *recurrentR*, we let $w_i = 1$. If the instance has $\hat{\Lambda}_0(y_i) = 0$, we will let $\frac{m_i}{\hat{\Lambda}_0(y_i)} = 0$ as usual convention.
+
+Let $$V(\bar{\gamma}) = \frac{1}{n} \sum_{i=1}^n {\bar{W}_i^T ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp(\bar{W}_i \bar{\gamma})},$$
+
+Then $$\frac{dV}{d\bar{\gamma}}(\bar{\gamma}) = \frac{-1}{n} \sum_{i=1}^n{\bar{W}_i^T \bar{W}_i exp(\bar{W}_i \bar{\gamma})}$$
+
+The *recurrentR* solves $V(\bar{\gamma}) = 0$ with the function `nleqslv` from the package *nleqslv*. The $\hat{\bar{\gamma}}$ could be accessed by:
+
+```{r gamma.bar.hat}
+result$gamma.bar.hat
+```
+
+The $\hat{\gamma}$ is:
 
 ```{r gamma.hat}
 result$gamma.hat
 ```
+
+*recurrentR* provides both bootstrap and asymptotic variance estimator. The user could choose one by passing the argument `method` in function `Huang2001`.
+
+```{r variance}
+result <- Wang2001(obj, method = "asymptotic")
+result <- Wang2001(obj, method = "bootstrap")
+result$gamma.bar.hat.var
+result$gamma.hat.var
+str(result$Lambda.hat.var)
+```
+
+The default method is (TODO)
+
+To calculate the asymptotic variance of $\hat{\gamma}$ and $\hat{\Lambda}_0(t)$, we need the following formulas given $\hat{\bar{\gamma}}$ and $\hat{\Lambda}_0(t)$:
+
+- $\hat{Q}(u) = \frac{1}{n} \sum_{i=1}^{n} { \sum_{j=1}^{m_i} {I(t_{i,j} \leq u)} }$
+- $\hat{R}(u) = \frac{1}{n} \sum_{i-1}^{n} { \sum_{j=1}^{m_i} {I(t_{i,j} \leq u \leq y_i)}}$
+- $\hat{b}_i(t) = \sum_{j=1}^{m_i}{ \int_{t}^{T_0} {\frac{I(t_{i,j} \leq u \leq y_i) d\hat{Q}(u)}{\hat{R}(u)^2}} - \frac{I(t \leq t_{i,j})}{\hat{R}(t_{i,j})}}$
+    - $\int_{t}^{T_0} {\frac{I(t_{i,j} \leq u \leq y_i) d\hat{Q}(u)}{\hat{R}(u)^2}} = \sum_{l} {\frac{I(t_{i,j} \leq s_{(l)} \leq y_i) d_{(l)} I(t \leq s_{(l)}) }{n \hat{R}(s_{(l)})^2}}$
+- $\hat{c}_i(t) = - \sum_{j=1}^n {\frac{m_j b_i(y_j)}{n \hat{\Lambda_0(y_j)}}} + \frac{m_i}{\hat{\Lambda}_0(y_i)} - \hat{\mu}_Z$
+- $\hat{d}_i(t) = \hat{\Lambda}_0(t) (\hat{c}_i + \hat{\mu}_Z \hat{b}_i(t) )$
+- $\hat{e}_i =\sum_{j=1}^n{ \frac{\bar{W}_j^T m_j b_i(y_j)}{n \hat{\Lambda_0}(y_j)}} + \bar{W}_i^T(\frac{m_i}{\hat{\Lambda}_0(y_i)} - exp(\bar{W}_i \hat{\bar{\gamma}}))$
+    - Let $\bar{\psi} = E[- \frac{d e_i}{d \bar{\gamma}}]$, then $\hat{\bar{\psi}} = \frac{1}{n} \sum_{i=1}^n{ \bar{W}_i^T \bar{W}_i exp(\bar{W}_i \hat{\bar{\gamma}})}$
+- $\hat{\bar{f}}_i(\hat{\bar{\gamma}}) = \hat{\bar{\psi}}^{-1} \hat{e}_i$
+    - Let $\hat{f}_i(\hat{\gamma}) = \hat{\bar{f}}_i(\hat{\bar{\gamma}})$ without the first entry.
+
+According to [@Wang2001], the asymptotic variacne of $\hat{\gamma}$ is $\frac{1}{n} \sum_{i=1}^n{\hat{f}_i(\hat{\gamma})}$. The asymptotic variance of $\hat{\Lambda}_0(t)$ is $\frac{\hat{\Lambda}_0(t)}{n} \sum_{i=1}^n{\hat{b}_i(t)^2}$
+
+## [@Huang2004]
+
+The estimator and asymptotic variance related to $\Lambda_0$ and $\gamma$ are the same as the one in [@Wang2001]. To obtain the estimator of $\alpha$ and $H_0(t) = \int_0^t h(u) du$, we need the estimator of random effect $z_i$ first:
+
+$$\hat{z}_i = \frac{m_i}{\hat{\Lambda}_0(y_i) exp(W_i \hat{\gamma)}}.$$
+
+Let $$U(\alpha) = \frac{1}{n} \sum_{i=1}^n {D_i W_i^T \frac{\sum_{j=1}^n{W_j^T \hat{z}_j exp(W_j \hat{\gamma}) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp(W_j \hat{\gamma})I(y_j \geq y_i)}} },$$
+
+Then $\hat{alpha}$ is the one satisfies $U(\hat{\alpha}) = 0$.
+
+Moreover, Let $$\Gamma(\alpha) = \frac{dU}{d\alpha}(\alpha) = \frac{1}{n} \sum_{i=1}^n{D_i(-\frac{\sum_{j=1}^n{W_j^2 \hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i) }} + \frac{(\sum_{j=1}^n{W_j \hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i) })^2}{(\sum_{j=1}^n{\hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i)})^2})},$$
+
+Then we can solve $\hat{\alpha}$ with `nleqslv` again. Note that $a^2$ is the convention of $a^T a$ if $a$ is a vector.
+
+With $\hat{\alpha}$, the $\hat{H}_0(t)$ will be:
+
+$$\hat{H}_0(t) = \sum_{i=1}^n{D_i I(y_i \leq t) \frac{1}{\sum_{j=1}^n{\hat{z}_j exp(W_j \alpha) I(y_j \geq y_i)}}}.$$
+
+
 
 # Reference
