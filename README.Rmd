@@ -292,4 +292,27 @@ To obtain the asymptotic variance, we need:
 - $\hat{V_1} = \frac{4}{n}\sum_{i=1}^n{ \frac{1}{\left(\begin{array}{c}n-1 \\ 2 \end{array}\right)} \sum_{i < j < k}{g_{i,j}(\hat{\beta}) g_{i,k}(\hat{\beta})} }$
 - $\hat{V_2} = \frac{-1}{\left(\begin{array}{c}n \\ 2 \end{array}\right)} \sum_{i < k}{\frac{dg_{i,k}}{d\beta}(\hat{\beta})}$
 
+Recall that in [@Wang2001], the $\hat{\Lambda}_0(t)$ is based on:
+
+$$\hat{\Lambda}_0(t) = \prod_{s_{(l)} > t}(1 - \frac{d_{(l)}}{R_{(l)}})$$
+
+where:
+
+- $s_{(l)}$ is the ordered and distinct values of event times ${t_{ij}}$.
+- $d_{(l)}$ is the number of events occurred at $s_{(l)}$.
+- $R_{(l)}$ is the total number of events ${t_{i,j}}$ which satisfies $t_{ij} \leq s_{(l)} \leq y_i$.
+
+To correct the effect of time-dependent covariates $X(t)$ and $\beta$, we let
+
+$$\hat{\Lambda}_0(t, \beta) = \prod_{s_{(l)} > t}(1 - \frac{d_{(l)}(\beta)}{R_{(l)}(\beta)}),$$
+
+where:
+
+- $s_{(l)}$ is the ordered and distinct values of event times ${t_{ij}}$.
+- $d_{(l)}(\beta) = \frac{1}{n} \sum_{i=1}^n { \sum_{j=1}^{m_i} { I(t_{i,j} == s_{(l)}) exp(-X_i(t_{i,j]} \beta)) } }$
+- $R_{(l)}(\beta) = \frac{1}{n} \sum_{i=1}^n { \sum_{j=1}^{m_i} { I(t_{i,j} \leq s_{(l)} \leq y_i) exp( -X_i(t_{i,j}) \beta ) } }$
+
+Note that $d_{(l)}(0) = d_{(l)}$ and $R_{(l)}(0) = R_{(l)}$.
+
+
 # Reference
