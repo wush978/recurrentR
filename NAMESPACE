@@ -1,8 +1,0 @@
-export(asymptotic.var)
-export(BorrowStrengthMethod)
-export(create_recurrent_data)
-export(Huang2004)
-export(step_integrate.StepFunction)
-export(step_integrate)
-exportMethods(curve)
-useDynLib(recurrentR)
