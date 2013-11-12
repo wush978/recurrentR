@@ -1,0 +1,19 @@
+# Monte Carlo Simulation of Wang2001
+
+# Data generation
+
+$x_i$ is i.i.d. Bernoulli random variables.
+
+## $P(X_i = 0) = 1$
+
+```{r}
+n <- 400
+x <- rep(FALSE, n)
+z <- (1-x) * runif(n, 0.5, 1.5) + x * runif(n, 1.5, 4)/2.5
+Z <- exp(-x * log(2.75)) * z
+lambda_0 <- function(t) 0.6 + (t - 6)^3 / 360
+gamma <- 1
+exp(x * gamma)
+y <- 
+```
+

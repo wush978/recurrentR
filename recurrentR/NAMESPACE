@@ -1,0 +1,5 @@
+export(create_recurrent_data)
+export(create_recurrent_data.list)
+export(create_recurrent_data.numeric)
+exportClasses("recurrent-data")
+useDynLib(recurrentR)

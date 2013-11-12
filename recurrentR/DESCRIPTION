@@ -1,0 +1,11 @@
+Package: recurrentR
+Type: Package
+Title: What the package does (short line)
+Version: 1.0
+Date: 2013-11-12
+Author: Wush Wu
+Maintainer: Wush Wu <wush978@gmail.com>
+Description: More about what it does (maybe more than one line)
+License: GPL(>= 3)
+Depends: Rcpp (>= 0.10.4)
+LinkingTo: Rcpp
