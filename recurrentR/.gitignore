@@ -3,3 +3,9 @@ src/RcppExports.cpp
 *.o
 *.so
 man
+*~
+autom4te.cache
+config.log
+config.status
+dev.R
+check.sh

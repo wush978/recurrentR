@@ -7,5 +7,6 @@ Author: Wush Wu
 Maintainer: Wush Wu <wush978@gmail.com>
 Description: More about what it does (maybe more than one line)
 License: GPL(>= 3)
-Depends: Rcpp (>= 0.10.4)
+Depends: methods, Rcpp (>= 0.10.4)
 LinkingTo: Rcpp
+RcppModules: StepFunction
