@@ -12,7 +12,8 @@ setClass(
     eval = "numeric",
     s = "numeric",
     d = "integer",
-    cache = "environment"
+    cache = "environment",
+    tol = "numeric"
     ),
   validity = function(object) {
     stopifnot(length(object@T_0) == 1)
@@ -28,7 +29,7 @@ create_recurrent_data <- function(...) {
 }
 
 #'@export
-create_recurrent_data.numeric <- function(y, D, t, T_0, W) {
+create_recurrent_data.numeric <- function(y, D, t, T_0, W, tol = 1e-4) {
   retval <- new("recurrent-data")
   retval@y <- y
   retval@D <- D
@@ -39,12 +40,14 @@ create_recurrent_data.numeric <- function(y, D, t, T_0, W) {
   validObject(retval)
   retval@s <- s(retval)
   retval@d <- d(retval)
+  retval@tol <- tol
+  retval@cache <- new.env()
   retval
 }
 
 #'@export
-create_recurrent_data.list <- function(X, y, D, t, T_0, W) {
-  retval <- create_recurrent_data.numeric(y, D, t, T_0, W)
+create_recurrent_data.list <- function(X, y, D, t, T_0, W, tol = 1e-4) {
+  retval <- create_recurrent_data.numeric(y, D, t, T_0, W, tol)
   retval@X <- X
   validObject(retval)
   retval

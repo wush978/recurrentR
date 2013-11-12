@@ -1,4 +1,42 @@
-# Monte Carlo Simulation of Wang2001
+# Wang2001
+
+# Availability Test
+
+```{r}
+library(recurrentR)
+library(microbenchmark)
+
+gen_obj <- function(n) {
+  x <- sample(0:1, n, TRUE)
+  T_0 <- 40
+  y <- rexp(n, 1/T_0)
+  D <- y < T_0
+  y <- ifelse(D, y, T_0)
+  t <- lapply(y, function(y) {
+    n <- rpois(1, y * 0.4)
+    if (n == 0) return(numeric(0))
+    sort(runif(n, 0, y))
+  })
+  create_recurrent_data.numeric(y, D, t, T_0, matrix(x, ncol = 1))
+}
+
+obj.list <- lapply(seq(100, by=100, length.out=10), gen_obj)
+test <- function(i) {
+  force(i)
+  Lambda_0.hat <- recurrentR:::Lambda_0.hat.gen(obj.list[[i]])
+  Lambda_0.hat.y <- Lambda_0.hat(obj.list[[i]]@y)
+  Lambda_0.hat.s <- Lambda_0.hat(obj.list[[i]]@s)
+  gamma.hat <- recurrentR:::gamma.hat.gen(obj.list[[i]])
+  gamma.hat
+}
+r <- list()
+# cat(paste(sprintf("r[[%d]] <- test(%d)", 1:10, 1:10), collapse=","))
+microbenchmark(
+  r[[1]] <- test(1),r[[2]] <- test(2),r[[3]] <- test(3),r[[4]] <- test(4),r[[5]] <- test(5),r[[6]] <- test(6),r[[7]] <- test(7),r[[8]] <- test(8),r[[9]] <- test(9),r[[10]] <- test(10)
+  )
+r
+gamma.hat.gen(obj.list[[2]])
+```
 
 # Data generation
 
