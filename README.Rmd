@@ -101,7 +101,7 @@ where:
 
 Moreover, the hazard function of the censor time is modeled as
 
-$$\h_i(t) = h_0(t) z_i exp(W_i \alpha)$$
+$$h_i(t) = h_0(t) z_i exp(W_i \alpha)$$
 
 where:
 
@@ -314,5 +314,47 @@ where:
 
 Note that $d_{(l)}(0) = d_{(l)}$ and $R_{(l)}(0) = R_{(l)}$.
 
+The asymptotic variance of $\hat{\Lambda}_0(t, \beta)$ will be
+
+$$4 \Lambda_0(t)^2 E\left[\kappa_{1,2} (t, \beta) \kappa_{1, 3}( t, \beta)\right].$$
+
+The estimator of $\hat{\gamma}$ is the root of the following equation:
+
+$$\frac{1}{n} \sum_{i=1}^n{\bar{W}_i \left[\frac{m_i}{\sum_{s_{(l)} \leq y_i}{exp(X_i(s_{(l)}) \hat{\beta})(\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})})} - exp(\bar{W}_i \bar{\gamma})\right]},$$
+
+where:
+
+- $\bar{W}_i = (1, W_i)$
+- $\bar{\gamma} = (\mu_Z, \gamma^T)$
+
+The asymptotic variance of $\hat{\gamma}$ will be:
+
+$$E(\frac{d\xi}{d\gamma})^{-1} \Sigma E(\frac{d\xi}{d\gamma})^{-1}$$.
+
+To obtain the definition of $\kappa$, we need:
+
+- $\hat{Q}(u) = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { I(t_{i,j} \leq u) exp(X_i(t_{i,j}) \hat{\beta}) } }$
+- $\hat{R}(u) = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { I(t_{i,j} \leq u \leq y_i) exp(- X_i(t_{i,j}) \hat{\beta}) } }$
+- $\hat{V}_{\tilde{Q}}(u) = E \frac{dQ}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u) exp(- X_i(t_{i,j}) \hat{\beta}) } }$ 
+- $\hat{V}_{\tilde{R}}(u) = E \frac{dR}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u \leq y_i) exp(- X_i(t_{i,j}) \hat{\beta}) } }$
+- $\hat{\phi}_{i,j}(t) = \left(\int_t^{T_0} { \frac{d\hat{V}_{\tilde{Q}}(u)}{\hat{R}(u)} - \frac{\hat{V}_{\tilde{R}}(u) d\hat{Q}(u)}{\hat{R}(u)^2} }\right)\hat{V}_2^{-1} g_{i,j}(\hat{\beta}) = \left(\sum_{t \leq s_{(l)}}{\frac{\hat{V}_{\tilde{Q}}(s_{(l)}) - \hat{V}_{\tilde{Q}}(s_{(l-1)})}{\hat{R}(s_{(l)})}} - \sum_{t \leq s_{(l)}}{\frac{\hat{V}_{\tilde{R}}(s_{(l)})(\hat{Q}(s_{(l)}) - \hat{Q}(s_{(l-1)}))}{\hat{R}(s_{(l)})^2}} \right)\hat{V}_2^{-1} g_{i,j}(\hat{\beta})$ 
+- $\hat{\psi}_i(t) = \sum_{j=1}^{m_i}{I( t < t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \int_t^{T_0} {I(t_{i,j} \leq u \leq y_i) exp(X_i(t_{i,j}) \hat{\beta}) \frac{d \hat{Q}(u)}{\hat{R}(u)^2} } = \sum_{j=1}^{m_i}{I( t < t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \left( \sum_{s_{(l)} > t} { I(t_{i,j} \leq s_{(l)} \leq y_i) exp(X_i(t_{i,j}) \hat{\beta}) \frac{(\hat{Q}(s_{(l)}) - \hat{Q}(s_{(l-1)}))}{\hat{R}(s_{(l)})^2} } \right)$
+
+Then
+
+$$\hat{\kappa}_{i,j}(t) = \hat{\phi}_{i,j}(t) + \frac{\hat{\psi}_i(t) + \hat{\psi}_j(t)}{2}$$
+
+The estimator of asymptotic variance of $\hat{\Lambda}_0(t)$ will be
+
+$$4 \hat{\Lambda_0}(t)^2 \left(\frac{2}{n(n-1)(n-2)} \sum_{i=1}^n{ \sum_{j \neq i, k \neq i, j < k}{ \hat{\kappa}_{i,j}(t)\hat{\kappa}_{i,k}(t) } }\right)$$
+
+The asymptotic variance of $\hat{\gamma}$ involves:
+
+- $\hat{\xi}_{i,j} = \frac{1}{n} \sum_{k=1}^n{ \frac{- \bar{W}_k m_k}{\left[\sum_{s_{(l)} \leq y_k} { exp(X_k(s_{(l)}) \hat{\beta}) (\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) }\right]^2} \left[\sum_{s_{(l)} \leq y_k} { X_k(s_{(l)}) \hat{V}_2^{-1} g_{i,j}(\hat{\beta}) exp(X_k(s_{(l)}) \hat{\beta}) ( \hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) + exp(X_k(s_{(l)}) \hat{\beta}) (\hat{\kappa}_{i,j}(s_{(l)}) \hat{\Lambda}_0(s_{(l)}) - \hat{\kappa}_{i,j}(s_{(l-1)}) \hat{\Lambda}_0(s_{(l-1)})) } \right]  } + \frac{1}{2} \bar{W}_i \left[ \frac{m_i}{\sum_{s_{(l)} \leq y_i} { exp(X_i(s_{(l)}) \hat{\beta}) (\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) }} - exp(\bar{W}_i \hat{\bar{\gamma}}) \right] + \frac{1}{2} \bar{W}_j \left[ \frac{m_j}{\sum_{s_{(l)} \leq y_j} { exp(X_j(s_{(l)}) \hat{\beta}) (\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) }} - exp(\bar{W}_j \hat{\bar{\gamma}}) \right]$
+- $- \frac{d\xi_{i,j}}{d\gamma} = \frac{1}{2} \bar{W}_i^2 exp(\bar{W}_i \hat{\bar{\gamma}}) + \frac{1}{2} \bar{W}_j^2 exp(\bar{W}_j \hat{\bar{\gamma}})$
+
+Therefore, the estimator of asymptotic variance of $\hat{\bar{\gammma}}$ is:
+
+$$$$
 
 # Reference
