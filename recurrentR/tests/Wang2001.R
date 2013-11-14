@@ -25,7 +25,7 @@ r2 <- lapply(1:obj@n, function(i) {
  force(i)
  Vectorize(b.hat(i))(obj@y)
 })
-r3 <- recurrentR:::b.hat.y(obj)
+r3 <- recurrentR:::b.hat.y.gen(obj)
 for(i in 1:obj@n) {
   stopifnot(all.equal(r2[[i]], r3[i,]))
 }

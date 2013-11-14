@@ -120,26 +120,62 @@ b.hat.gen <- function(obj) {
   })
 }
 
-b.hat.y <- function(obj) {
-  if (!exists("b.hat.y", envir=obj@cache, inherits=FALSE)) {
-    s <- obj@s
-    d <- obj@d
-    t_ij_vs_y_k <- lapply(1:obj@n, function(i) {
+t_ij_vs_y_k.gen <- function(obj) {
+  if (!exists("t_ij_vs_y_k", envir=obj@cache, inherits=FALSE)) {
+    obj@cache[["t_ij_vs_y_k"]] <- lapply(seq_len(obj@n), function(i) {
       temp <- outer(obj@t[[i]], obj@y, ">=")
       array(as.integer(temp), dim(temp))
     })
+  }
+  obj@cache[["t_ij_vs_y_k"]]
+}
+
+t_ij_vs_s.gen <- function(obj) {
+  if (!exists("t_ij_vs_s", envir=obj@cache, inherits=FALSE)) {
     #**slow**
-    t_ij_vs_s <- lapply(1:obj@n, function(i) {
-      temp <- outer(s, obj@t[[i]], ">=")
+    obj@cache[["t_ij_vs_s"]] <- lapply(seq_len(obj@n), function(i) {
+      temp <- outer(obj@s, obj@t[[i]], ">=")
       array(as.integer(temp), dim(temp))
     })
     #**slow**
-    s_vs_y_i <- outer(s, obj@y, "<=")
+  }
+  obj@cache[["t_ij_vs_s"]]
+}
+
+s_vs_y_i.gen <- function(obj) {
+  if (!exists("s_vs_y_i", envir=obj@cache, inherits=FALSE)) {
+    s_vs_y_i <- outer(obj@s, obj@y, "<=")
     s_vs_y_i <- array(as.integer(s_vs_y_i), dim(s_vs_y_i))
+    obj@cache[["s_vs_y_i"]] <- s_vs_y_i
+  }
+  obj@cache[["s_vs_y_i"]]
+}
+
+y_k_vs_y_i.gen <- function(obj) {
+  if (!exists("y_k_vs_y_i", envir=obj@cache, inherits=FALSE)) {
     y_k_vs_y_i <- outer(obj@y, obj@y, "<=")
-    y_k_vs_y_i <- array(as.integer(y_k_vs_y_i), dim(y_k_vs_y_i))
+    obj@cache[["y_k_vs_y_i"]] <- array(as.integer(y_k_vs_y_i), dim(y_k_vs_y_i))
+  }
+  obj@cache[["y_k_vs_y_i"]]
+}
+
+y_k_vs_s.gen <- function(obj) {
+  if (!exists("y_k_vs_s", envir=obj@cache, inherits=FALSE)) {
     y_k_vs_s <- outer(obj@y, obj@s, "<=")
-    y_k_vs_s <- array(as.integer(y_k_vs_s), dim(y_k_vs_s))
+    obj@cache[["y_k_vs_s"]] <- array(as.integer(y_k_vs_s), dim(y_k_vs_s))
+  }
+  obj@cache[["y_k_vs_s"]]
+}
+
+b.hat.y.gen <- function(obj) {
+  if (!exists("b.hat.y", envir=obj@cache, inherits=FALSE)) {
+    s <- obj@s
+    d <- obj@d
+    t_ij_vs_y_k <- t_ij_vs_y_k.gen(obj)
+    t_ij_vs_s <- t_ij_vs_s.gen(obj)
+    s_vs_y_i <- s_vs_y_i.gen(obj)
+    y_k_vs_y_i <- y_k_vs_y_i.gen(obj)
+    y_k_vs_s <- y_k_vs_s.gen(obj)
     R <- R.hat.c(obj)
     R__t_ij <- lapply(seq_len(obj@n), function(i) R$sort_call(obj@t[[i]]))
     R__s <- R$sort_call( s )
