@@ -1,5 +1,8 @@
+export(Wang2001)
 export(create_recurrent_data)
 export(create_recurrent_data.list)
 export(create_recurrent_data.numeric)
+export(step_integrate)
+export(step_integrate.StepFunction)
 exportClasses("recurrent-data")
 useDynLib(recurrentR)

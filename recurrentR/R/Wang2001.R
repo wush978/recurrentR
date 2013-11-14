@@ -35,25 +35,32 @@ Lambda_0.hat.y.inv.gen <- function(obj) {
   obj@cache[["1/Lambda_0.hat(y)"]]
 }
 
-m <- function(obj) {
+m.gen <- function(obj) {
   if (!exists("m", envir=obj@cache, inherits=FALSE)) {
     obj@cache[["m"]] <- sapply(obj@t, length)
   }
   obj@cache[["m"]]
 }
 
-gamma.hat.gen <- function(obj) {
-  if (!exists("gamma.hat", envir=obj@cache, inherits=FALSE)) {
-    b <- m(obj) * Lambda_0.hat.y.inv.gen(obj)
+w.gen <- function(obj) {
+  if (!exists("w", envir=obj@cache, inherits=FALSE)) {
+    obj@cache[["w"]] <- rep(1, obj@n)
+  }
+  obj@cache[["w"]]
+}
+
+gamma.bar.hat.gen <- function(obj) {
+  if (!exists("gamma.bar.hat", envir=obj@cache, inherits=FALSE)) {
+    b <- m.gen(obj) * Lambda_0.hat.y.inv.gen(obj)
     W.bar <- cbind(1, obj@W)
-    gamma.hat <- rep(0, ncol(W.bar))
+    gamma.bar.hat <- rep(0, ncol(W.bar))
     g <- function(gamma) t(W.bar) %*% (b - exp(W.bar %*% gamma))
     g.grad <- function(gamma) - t(W.bar) %*% diag(c(exp(W.bar %*% gamma)), nrow(W.bar), nrow(W.bar)) %*% W.bar
-    slv <- nleqslv(gamma.hat, g, jac=g.grad)
+    slv <- nleqslv(gamma.bar.hat, g, jac=g.grad)
     if (sum(abs(g(slv$x))) > obj@tol) stop("Failed to converge during solving gamma")
-    obj@cache[["gamma.hat"]] <- slv$x
+    obj@cache[["gamma.bar.hat"]] <- slv$x
   }
-  obj@cache[["gamma.hat"]]
+  obj@cache[["gamma.bar.hat"]]
 }
 
 Q.hat <- function(obj) {
@@ -199,4 +206,108 @@ b.hat.y.gen <- function(obj) {
     obj@cache[["b.hat.y"]] <- retval
   }
   obj@cache[["b.hat.y"]]
+}
+
+# c.hat.gen <- function(obj) {
+#   if (!exists("c.hat", envir=obj@cache, inherits=FALSE)) {
+#     m <- m.gen(obj)
+#     Lambda.hat.T_0 <- Lambda_0.hat.gen(obj)(obj@T_0)
+#     Lambda_0.hat.y.inv <- Lambda_0.hat.y.inv.gen(obj)
+#     b.hat.y <- b.hat.y.gen(obj)
+#     obj@cache[["c.hat"]] <- lapply(seq_len(obj@n), function(i) {
+#       force(i)
+#       bi.y <- b.hat.y[i,]
+#       mean(bi.y * m * Lambda_0.hat.y.inv) + m[i] * Lambda_0.hat.y.inv[i] - Lambda.hat.T_0
+#     })
+#   }
+#   obj@cache[["c.hat"]]
+# }
+
+c.hat.i.gen <- function(obj) {
+  if (!exists("c.hat.i", envir=obj@cache, inherits=FALSE)) {
+    m <- m.gen(obj)
+    Lambda.hat.T_0 <- Lambda_0.hat.gen(obj)(obj@T_0)
+    Lambda_0.hat.y.inv <- Lambda_0.hat.y.inv.gen(obj)
+    b.hat.y <- b.hat.y.gen(obj)
+    retval <- numeric(obj@n)
+    for(i in seq_len(obj@n)) {
+      bi.y <- b.hat.y[i,]
+      retval[i] <- mean(bi.y * m * Lambda_0.hat.y.inv) + m[i] * Lambda_0.hat.y.inv[i] - Lambda.hat.T_0
+    }
+    obj@cache[["c.hat.i"]] <- retval
+  }
+  obj@cache[["c.hat.i"]]
+}
+
+e.hat.i.gen <- function(obj) {
+  if (!exists("e.hat.i", envir=obj@cache, inherits=FALSE)) {
+    m <- m.gen(obj)
+    Lambda_0.hat.y.inv <- Lambda_0.hat.y.inv.gen(obj)
+    gamma.bar.hat <- gamma.bar.hat.gen(obj)
+    w <- rep(1, obj@n)
+    b.hat.y <- b.hat.y.gen(obj)
+    W.bar <- cbind(1, obj@W)
+    retval <- vector("list", obj@n)
+    for(i in seq_len(obj@n)) {
+      term_1 <- (w * m * b.hat.y[i,] * Lambda_0.hat.y.inv)
+      term_2 <- m[i] *  Lambda_0.hat.y.inv[i]
+      retval[[i]] <- as.vector(term_1 %*% W.bar) / obj@n + (w[i] * W.bar[i,] * (term_2  - exp(W.bar[i,] %*% gamma.bar.hat)))
+    }
+    obj@cache[["e.hat.i"]] <- do.call(cbind, retval)
+  }
+  obj@cache[["e.hat.i"]]
+}
+
+Psi.bar.hat.gen <- function(obj) {
+  if (!is_cache(obj, "Psi.bar.hat")) {
+    w <- w.gen(obj)
+    gamma.bar.hat <- gamma.bar.hat.gen(obj)
+    W.bar <- cbind(1, obj@W)
+    dei.dgamma <- function(i) {
+      as.vector(- w[i] * exp(W.bar[i,] %*% gamma.bar.hat)) * (W.bar[i,] %*% t(W.bar[i,]))
+    }
+    dei.dgamma.i <- lapply(seq_len(obj@n), function(i) -dei.dgamma(i))
+    obj@cache[["Psi.bar.hat"]] <- Reduce("+", dei.dgamma.i) / obj@n
+  }
+  obj@cache[["Psi.bar.hat"]]
+}
+
+Psi.bar.hat.inv.gen <- function(obj) {
+  if (!is_cache(obj, "Psi.bar.hat.inv")) {
+    Psi.bar.hat <- Psi.bar.hat.gen(obj)
+    obj@cache[["Psi.bar.hat.inv"]] <- solve(Psi.bar.hat)
+  }
+  obj@cache[["Psi.bar.hat.inv"]]
+}
+    
+
+fi.hat.i.gen <- function(obj) {
+  if (!is_cache(obj, "fi.hat.i")) {
+    w <- w.gen(obj)
+    gamma.bar.hat <- gamma.bar.hat.gen(obj)
+    Psi.bar.hat.inv <- Psi.bar.hat.inv.gen(obj)
+    ei.seq <- e.hat.i.gen(obj)
+#    TO CHECK
+    obj@cache[["fi.hat.i"]] <- Psi.bar.hat.inv %*% ei.seq
+  }
+  obj@cache[["fi.hat.i"]]
+}
+
+#'@export
+Wang2001 <- function(obj) {
+  Lambda_0.hat <- Lambda_0.hat.gen(obj)
+  gamma.bar.hat <- gamma.bar.hat.gen(obj)
+  b.hat <- b.hat.gen(obj)
+  b <- lapply(seq_len(obj@n), b.hat)
+  psi.inv <- Psi.bar.hat.inv.gen(obj)
+  ei.seq <- e.hat.i.gen(obj)
+  fi.seq <- fi.hat.i.gen(obj)
+  list(
+    Lambda_0.hat = Lambda_0.hat,
+    Lambda_0.hat.var = function(t) {
+      (Lambda_0.hat(t)^2 * exp(2 * gamma.bar.hat[1]) * mean((sapply(b, function(b) b(t)) + fi.seq)^2)) / obj@n
+    },
+    gamma.bar.hat = gamma.bar.hat,
+    gamma.bar.hat.var = psi.inv %*% var(t(ei.seq)) %*% psi.inv / obj@n
+  )
 }
