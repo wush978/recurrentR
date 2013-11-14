@@ -19,3 +19,13 @@ obj <- local({
 Lambda_0.hat <- recurrentR:::Lambda_0.hat.gen(obj)
 Lambda_0.hat.y <- Lambda_0.hat(obj@y)
 gamma.hat <- recurrentR:::gamma.hat.gen(obj)
+# Validate b.hat
+b.hat <- recurrentR:::b.hat.gen(obj)
+r2 <- lapply(1:obj@n, function(i) {
+ force(i)
+ Vectorize(b.hat(i))(obj@y)
+})
+r3 <- recurrentR:::b.hat.y(obj)
+for(i in 1:obj@n) {
+  stopifnot(all.equal(r2[[i]], r3[i,]))
+}

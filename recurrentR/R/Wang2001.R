@@ -121,20 +121,46 @@ b.hat.gen <- function(obj) {
 }
 
 b.hat.y <- function(obj) {
-  R <- R.hat.c(obj)
-  Q <- Q.hat.c(obj)
-  retval <- matrix(0.0, obj@n, obj@n)
-  for(i in seq_len(obj@n)) {
-    R.t <- R$sort_call(obj@t[[i]])
-    x <- c(obj@t[[i]], obj@y[i])
-    y <- append(0:length(obj@t[[i]]), 0)
-    k.numerator <- new(StepFunction, x, y)
-    k <- k.numerator / R^2
-    for(j in seq_len(obj@n)) {
-      t <- obj@y[j]
-      if (t == obj@T_0) next
-      retval[i,j] <- step_integrate.StepFunction(k, Q, t, obj@T_0) - sum(as.numeric(t < obj@t[[i]]) / R.t)
+  if (!exists("b.hat.y", envir=obj@cache, inherits=FALSE)) {
+    s <- obj@s
+    d <- obj@d
+    t_ij_vs_y_k <- lapply(1:obj@n, function(i) {
+      temp <- outer(obj@t[[i]], obj@y, ">=")
+      array(as.integer(temp), dim(temp))
+    })
+    #**slow**
+    t_ij_vs_s <- lapply(1:obj@n, function(i) {
+      temp <- outer(s, obj@t[[i]], ">=")
+      array(as.integer(temp), dim(temp))
+    })
+    #**slow**
+    s_vs_y_i <- outer(s, obj@y, "<=")
+    s_vs_y_i <- array(as.integer(s_vs_y_i), dim(s_vs_y_i))
+    y_k_vs_y_i <- outer(obj@y, obj@y, "<=")
+    y_k_vs_y_i <- array(as.integer(y_k_vs_y_i), dim(y_k_vs_y_i))
+    y_k_vs_s <- outer(obj@y, obj@s, "<=")
+    y_k_vs_s <- array(as.integer(y_k_vs_s), dim(y_k_vs_s))
+    R <- R.hat.c(obj)
+    R__t_ij <- lapply(seq_len(obj@n), function(i) R$sort_call(obj@t[[i]]))
+    R__s <- R$sort_call( s )
+    retval <- matrix(numeric(obj@n^2), obj@n, obj@n)
+    for(i in seq_len(obj@n)) {
+      if (length(obj@t[[i]]) == 0) next
+      term_2.i <- - (1/R__t_ij[[i]]) %*% t_ij_vs_y_k[[i]]
+      term_1.i <- apply(
+  #       #*** bottleneck ***
+        y_k_vs_s %*% (t_ij_vs_s[[i]] * (s_vs_y_i[,i] * d  / (obj@n * R__s^2)))
+  #       #*** bottleneck ***
+        , 1, sum)
+      retval[i,] <- term_1.i + term_2.i
+  #     ***prototype***
+  #     for(k in seq_len(obj@n)) {
+  #       term_2 <- -sum(t_ij_vs_y_k[[i]][,k] / R__t_ij[[i]])
+  #       term_1 <- sum((s_vs_y_i[,i] * d * y_k_vs_s[k,] / R__s^2) %*% t_ij_vs_s[[i]]) / obj@n
+  #       retval[i,k] <- term_1 + term_2
+  #     }
     }
+    obj@cache[["b.hat.y"]] <- retval
   }
-  retval
+  obj@cache[["b.hat.y"]]
 }
