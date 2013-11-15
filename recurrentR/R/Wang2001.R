@@ -63,6 +63,13 @@ gamma.bar.hat.gen <- function(obj) {
   obj@cache[["gamma.bar.hat"]]
 }
 
+gamma.hat.gen <- function(obj) {
+  if (!is_cache(obj, "gamma.hat")) {
+    obj@cache[["gamma.hat"]] <- gamma.bar.hat.gen(obj)[-1]
+  }
+  obj@cache[["gamma.hat"]]
+}
+
 Q.hat <- function(obj) {
   s <- obj@s
   y <- sapply(c(0, s), function(u) mean(sapply(obj@t, function(t) sum(t <= u))))
