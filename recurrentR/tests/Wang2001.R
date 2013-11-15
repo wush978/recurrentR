@@ -1,5 +1,4 @@
 library(recurrentR)
-library(microbenchmark)
 
 obj <- local({
   n <- 100
