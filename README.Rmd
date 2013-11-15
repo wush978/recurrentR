@@ -224,9 +224,9 @@ The estimator and asymptotic variance related to $\Lambda_0$ and $\gamma$ are th
 
 $$\hat{z}_i = \frac{m_i}{\hat{\Lambda}_0(y_i) exp(W_i \hat{\gamma)}}.$$
 
-Let $$U(\alpha) = \frac{1}{n} \sum_{i=1}^n {D_i W_i^T \frac{\sum_{j=1}^n{W_j^T \hat{z}_j exp(W_j \hat{\gamma}) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp(W_j \hat{\gamma})I(y_j \geq y_i)}} },$$
+Let $$U(\alpha) = \frac{1}{n} \sum_{i=1}^n {D_i W_i^T \frac{\sum_{j=1}^n{W_j^T \hat{z}_j exp(W_j \hat{\alpha}) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp(W_j \hat{\alpha})I(y_j \geq y_i)}} },$$
 
-Then $\hat{alpha}$ is the one satisfies $U(\hat{\alpha}) = 0$.
+Then $\hat{\alpha}$ is the one satisfies $U(\hat{\alpha}) = 0$.
 
 Moreover, Let $$\Gamma(\alpha) = \frac{dU}{d\alpha}(\alpha) = \frac{1}{n} \sum_{i=1}^n{D_i(-\frac{\sum_{j=1}^n{W_j^2 \hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i) }} + \frac{(\sum_{j=1}^n{W_j \hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i) })^2}{(\sum_{j=1}^n{\hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i)})^2})},$$
 
