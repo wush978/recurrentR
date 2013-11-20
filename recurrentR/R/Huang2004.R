@@ -78,9 +78,25 @@ H_0.hat.gen <- function(obj) {
   obj@cache[["H_0.hat"]]
 }
 
-psi_3i.y.gen <- function(obj) {
+psi_3i.y.gen <- function(obj, b) {
   if (!is_cache(obj, "psi_3i.y")) {
-    browser()
+    m <- m.gen(obj)
+    n <- obj@n
+    Lambda_0.hat.y.inv <- Lambda_0.hat.y.inv.gen(obj)
+    gamma.hat <- gamma.hat.gen(obj)
+    bi.y <- b.hat.y.gen(obj)
+    fi.hat.i <- recurrentR:::fi.hat.i.gen(obj)
+    fi.seq <- fi.hat.i[-1, , drop = FALSE]
+    Zi <- Z.hat.gen(obj)
+    m.F.hat.y.inv <- m * Lambda_0.hat.y.inv
+    indicator.T <- indicator.T.gen(obj)
+    term1.2 <- obj@W %*% fi.seq + bi.y
+    exp.X.b.gamma.hat <- exp(as.vector(obj@W %*% (b - gamma.hat)))
+    term2 <- term1.1 <- t(m.F.hat.y.inv * exp.X.b.gamma.hat * indicator.T)
+    term1 <- term1.1 %*% term1.2 / n
+    term3 <- as.vector(as.vector(Zi * exp(obj@W %*% b)) %*% indicator.T) / n
+    retval <- term1 + term2 - term3 
+    obj@cache[["psi_3i.y"]] <- retval
   }
   obj@cache[["psi_3i.y"]]
 }
