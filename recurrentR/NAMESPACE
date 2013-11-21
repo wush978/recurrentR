@@ -1,3 +1,4 @@
+export(Huang2004)
 export(Wang2001)
 export(create_recurrent_data)
 export(create_recurrent_data.list)

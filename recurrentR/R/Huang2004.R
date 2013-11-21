@@ -100,3 +100,127 @@ psi_3i.y.gen <- function(obj, b) {
   }
   obj@cache[["psi_3i.y"]]
 }
+
+psi_4i.y.gen <- function(obj, b) {
+  if (!is_cache(obj, "psi_4i.y")) {
+    m <- m.gen(obj)
+    Lambda_0.hat.y.inv <- Lambda_0.hat.y.inv.gen(obj)
+    gamma.hat <- gamma.hat.gen(obj)
+    bi.y <- b.hat.y.gen(obj)
+    fi.hat.i <- recurrentR:::fi.hat.i.gen(obj)
+    fi.seq <- fi.hat.i[-1, , drop = FALSE]
+    Zi <- Z.hat.gen(obj)
+    m.F.hat.y.inv <- m * Lambda_0.hat.y.inv
+    indicator.T <- indicator.T.gen(obj)
+    term1.2 <- obj@W %*% fi.seq + bi.y
+    exp.X.b.gamma.hat <- exp(as.vector(obj@W %*% (b - gamma.hat)))
+    retval.k <- function(k) {
+      term2 <- term1.1 <- t((m.F.hat.y.inv * exp.X.b.gamma.hat * obj@W[,k]) * indicator.T)
+      term1 <- term1.1 %*% term1.2 / obj@n
+      term3 <- as.vector(as.vector(Zi * obj@W[,k] * exp(obj@W %*% b)) %*% indicator.T) / obj@n
+      retval <- term1 + term2 - matrix(term3, nrow=obj@n, ncol=obj@n)
+      retval
+    }
+    retval <- sapply(1:ncol(obj@W), retval.k, simplify="array")
+    obj@cache[["psi_4i.y"]] <- retval
+  }
+  obj@cache[["psi_4i.y"]]
+}
+
+psi_i.y.gen <- function(obj, b) {
+  if (!is_cache(obj, "psi_i.y")) {
+    m <- m.gen(obj)
+    Lambda_0.hat.y.inv <- Lambda_0.hat.y.inv.gen(obj)
+    gamma.hat <- gamma.hat.gen(obj)
+    bi.y <- b.hat.y.gen(obj)
+    fi.hat.i <- recurrentR:::fi.hat.i.gen(obj)
+    fi.seq <- fi.hat.i[-1, , drop = FALSE]
+    Zi <- Z.hat.gen(obj)
+    m.F.hat.y.inv <- m * Lambda_0.hat.y.inv
+    indicator.T <- indicator.T.gen(obj)
+    psi_3i.y <- psi_3i.y.gen(obj, b)
+    psi_4i.y <- psi_4i.y.gen(obj, b)
+    term2 <- obj@D %*% obj@W / obj@n
+    Z.exp.X.beta.I.Y.geq.s <- t(as.vector(Zi * exp(obj@W %*% b)) * indicator.T)
+    term6.num <- term5.num <- term3.num.2 <- Z.exp.X.beta.I.Y.geq.s %*% obj@W
+    term6.dem <- term5.dem <- term4.dem <- term3.dem <- as.vector(Z.exp.X.beta.I.Y.geq.s %*% rep(1, obj@n))
+    term6 <- obj@D %*% (term6.num / term6.dem) / obj@n
+    retval.i <- function(i) {
+      term1 <- obj@D[i] * obj@W[i,]
+      term3.num.1 <- psi_3i.y[,i]
+      term3 <- obj@D %*% (term3.num.1 * term3.num.2 / term3.dem^2) #! no need to divide n because term3.dem^2 contains n^2
+      term4.num <- psi_4i.y[,i,]
+      term4 <- obj@D %*% (term4.num / term4.dem) #!
+      term5 <- obj@D[i] * term5.num[i,] / term5.dem[i]
+      as.vector(term1 - term2 + term3 - term4 - term5 + term6)
+    }
+    obj@cache[["psi_i.y"]] <- if (ncol(obj@W) > 1) t(sapply(1:obj@n, retval.i)) else matrix(sapply(1:obj@n, retval.i), ncol=1)
+  }
+  obj@cache[["psi_i.y"]]
+}
+
+Sigma.hat.gen <- function(obj, b) {
+  key <- "Sigma.hat"
+  if (!is_cache(obj, key)) {
+    psi_i.y <- psi_i.y.gen(obj, b)
+    obj@cache[[key]] <- var(psi_i.y) * (obj@n-1) / obj@n
+  }
+  obj@cache[[key]]
+}
+
+phi_i.y.gen <- function(obj, b) {
+  key <- "phi_i.y"
+  if (!is_cache(obj, key)) {
+    m <- m.gen(obj)
+    Lambda_0.hat.y.inv <- Lambda_0.hat.y.inv.gen(obj)
+    gamma.hat <- gamma.hat.gen(obj)
+    bi.y <- b.hat.y.gen(obj)
+    fi.hat.i <- recurrentR:::fi.hat.i.gen(obj)
+    fi.seq <- fi.hat.i[-1, , drop = FALSE]
+    Zi <- Z.hat.gen(obj)
+    m.F.hat.y.inv <- m * Lambda_0.hat.y.inv
+    indicator.T <- indicator.T.gen(obj)
+    psi_3i.y <- psi_3i.y.gen(obj, b)
+    psi_4i.y <- psi_4i.y.gen(obj, b)
+    Gamma.hat <- Gamma.gen(obj) 
+    indicator.T <- indicator.T.gen(obj)
+    psi_3i.y <- psi_3i.y.gen(obj, b)
+    Z.exp.X.beta.I.Y.geq.s <- t(as.vector(Zi * exp(obj@W %*% b)) * indicator.T)
+    psi_i.y <- psi_i.y.gen(obj, b)
+    term4.num.1 <- Z.exp.X.beta.I.Y.geq.s %*% obj@W
+    term4.dem.1 <- term3.dem <- term2.dem <- term1.dem <- as.vector(Z.exp.X.beta.I.Y.geq.s %*% rep(1, obj@n))
+    D.indicator.T <- t(obj@D * t(indicator.T))
+    retval.i <- function(i) {
+      term1.num <- psi_3i.y[,i]
+      term1 <- as.vector(obj@n * D.indicator.T %*% (term1.num / term1.dem^2))
+      term2 <- obj@n * obj@D[i] * indicator.T[,i] / term2.dem[i]
+      term3 <- as.vector(D.indicator.T %*% (1 / term3.dem))
+      term4.1 <- D.indicator.T %*% (term4.num.1 / term4.dem.1^2)
+      term4.2 <- solve(Gamma.hat(b))
+      term4.3 <- t(psi_i.y) # 2 * 100
+      term4 <- diag((term4.1 %*% term4.2) %*% term4.3)
+      term1 + term2 + term3 + term4
+    }  
+    obj@cache[[key]] <- sapply(1:obj@n, retval.i)
+  }
+  obj@cache[[key]]
+}
+
+#'@export
+Huang2004 <- function(obj) {
+  y <- obj@y
+  Lambda_0.hat <- Lambda_0.hat.gen(obj)
+  gamma.hat <- gamma.hat.gen(obj)
+  Zi <- Z.hat.gen(obj)
+  Gamma.hat <- Gamma.gen(obj)
+  alpha.hat <- alpha.hat.gen(obj)
+  H0.hat <- H_0.hat.gen(obj)
+  Sigma <- Sigma.hat.gen(obj, alpha.hat)
+  Gamma <- solve(Gamma.gen(obj)(alpha.hat))
+  H0.hat.y <- sapply(obj@y, H0.hat)
+  phi_i.y <- phi_i.y.gen(obj, alpha.hat)
+  H0.hat.y.sd <- apply(phi_i.y / obj@n, 1, sd)
+  i.y <- order(y)
+  return(list(alpha.hat=alpha.hat, y = y[i.y], H0.hat.y=H0.hat.y[i.y], H0.hat.y.sd=H0.hat.y.sd[i.y], alpha.hat.var=(Gamma %*% Sigma %*% t(Gamma)) / obj@n))
+  
+}
