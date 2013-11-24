@@ -1,0 +1,189 @@
+gen_inhomo_poisson <- function(lambda, T_0, lambda_u = NULL) {
+        	if (is.null(lambda_u)) {
+                lambda_u <- optimize(lambda, c(0, T_0), maximum = TRUE)$objective
+        	}
+        	result <- gen_homo_poisson(lambda_u, T_0)
+        	result[runif(length(result)) < sapply(result, function(r) lambda(r) / lambda_u)]
+	  }
+
+gen_homo_poisson <- function(lambda, T_0) {
+        	result <- c()
+        	t <- 0
+        	while(t <= T_0) {
+                u <- runif(1)
+                t <- t - log(u) / lambda
+                if (t <= T_0) result <- append(result, t)
+        	}
+        	result
+	  }
+
+inverse <- function (f, lower = -100, upper = 100) {
+   			function (y) uniroot((function (x) f(x) - y), lower = lower, upper = upper)[1]
+		}
+
+setClass("Wang2001",slots = c(x="matrix", y="numeric", t="list"))
+setClass("Huang2004",slots = c(x="matrix", y="numeric", delta="numeric", t="list"))
+setClass("Huang2010",slots = c(w="numeric", X_t="list", y="numeric", t="list"))
+
+#========================================================================================================================
+#Wang 2001
+#n=sample size
+#b=coefficient parameter of intensity function
+#p=parameter of covariate x distribution;x~Ber(p) 
+
+#x=covariate follows Ber(p);p=0.5 or 1
+#z=frailty variable
+#y=censoring time
+#t=recurrent times
+
+Gen_data_Wang2001 <-  function(n=400, b, p=0.5)
+		{	 
+			x <- rbinom(n,1,p)
+			z.star <- sapply(x, function(s) ifelse(s==0,runif(1,0.5,1.5),runif(1,1.5,4)/2.5)) 
+			z <- exp(-x*log(2.75))*z.star 
+			T_0 <- 10
+			y <- mapply(function(z,u) -1/(z/10)*log(exp(-z/10)*u+exp(-z)*(1-u)),z=z,u=runif(n))
+			lambda_0 <- function(u) (u-6)^3/360+0.6 #baseline intensity function
+			Lambda_0 <- function(t) integrate(lambda_0,0,t)$value
+			Recurrent.T  <- function(z,x,y)
+				{	
+					lambda_i <- function(t) z*exp(b*x)*lambda_0(t)
+					T <- gen_inhomo_poisson(lambda_i, y)
+					if(is.null(T)){T <- numeric(0)}
+					T
+				}
+			T <- mapply(Recurrent.T, z=z, x=x, y=y)	
+			return(new("Wang2001", x=model.matrix(~1+x), y=y, t=T))
+		}
+obj <- Gen_data_Wang2001(n=400, b=1, p=0.5)
+
+#========================================================================================================================
+#Huang 2004
+#n=sample size
+#par=(a,b) coefficient parameters of intensity function & hazard function
+#frailty.dist=frailty variable distribution
+#lambda_0=baseline intensity function
+#h_0=baseline hazard function
+
+#x=covariate follows Ber(p)
+#z=frailty variable
+#c=potential drop out time
+#d=death time
+#y=min(c,d)
+#delta=censoring indicator
+#T_0=terminater time
+#t=recurrent times
+
+#################################################
+#Senario 1(default)
+lambda_0 <- function(u) 1/10
+h_0 <- function(u) u/400
+#Senario 2
+lambda_0 <- function(u)(u+1)/10
+h_0 <- function(u) sqrt(u)/200
+
+#coefficient parameter
+a=0;b=0
+a=-1;b-1.5
+par <- c(a,b)
+#################################################
+
+Gen_data_Huang2004 <- function(n=200, par=NULL, frailty.dist=c("Pois","Gamma"), h_0=NULL, lambda_0=NULL)	
+		{
+
+			if(is.null(h_0)) h_0 <- function(u) u/400
+			if(is.null(lambda_0)) lambda_0 <- function(u) 1/10	
+			if(is.null(par)) par <- c(0,0)
+			a <- par[1];b <- par[2]
+			x <- rbinom(n,1,0.5)
+			switch(frailty.dist, Pois={z <- rpois(n,10)}, Gamma={z <- rgamma(n,2,scale=5)})
+			c <- mapply(function(x,z) x*rexp(1,1/10)+(1-x)*rexp(1,z^2/300), x=x, z=z)
+			H_0 <- function(t) integrate(h_0,0,t)$value
+			inverse.H_0 <- inverse(H_0,0.0001,500)
+			d <- mapply(function(u,z,x) inverse.H_0(-log(u)/(z*exp(x*b)))$root, u=runif(n), z=z, x=x)
+			y <- mapply(function(c,d) min(c,d), c=c, d=d)
+			delta <- mapply(function(c,d) ifelse(d<=c,1,0) , c=c, d=d)
+			
+			Lambda_0 <- function(t) integrate(lambda_0,0,t)$value
+			Recurrent.T  <- function(z,x,y)
+				{	
+					lambda_i <- function(t) z*exp(a*x)*lambda_0(t)
+					T <- gen_inhomo_poisson(lambda_i, y)
+					if(is.null(T)){T <- numeric(0)}
+					T
+				}
+			T <- mapply(Recurrent.T, z=z, x=x, y=y)	
+			return(new("Huang2004", x=model.matrix(~1+x), y=y, delta=delta ,t=T))			
+		}
+
+obj <- Gen_data_Huang2004(n=200, par=par, frailty.dist="Pois")
+
+#========================================================================================================================
+#Huang2010
+#n=sample size
+#par=(b,r) coefficient parameters
+#lambda_0=baseline intensity function
+
+#z=frailty variable 
+#X_t=Process of time independent covariate
+#w=treatment assignment
+#y1=failure event time
+#y0=study end
+#y=censoring time
+
+lambda_0 <- function(u) 1/2 #default
+lambda_0 <- function(u) sqrt(u)/4
+
+b=0.3;r=0.3
+par <- c(b,r)
+
+Gen_data_Huang2010 <- function(n, par=NULL, lambda_0=NULL)
+		{
+			if(is.null(lambda_0)) lambda_0 <- function(u) 1/2
+			if(is.null(par)) par <- c(0,0)
+			b <- par[1];r <- par[2]
+			z <- rgamma(n,1/4,scale=4)	
+			w <- rbinom(n,1,0.5)	
+			x <- runif(n)
+			x_t <- function(i)
+				{
+					u <- x[i] 
+					function(t){u*log(t)}
+				} 	
+			y1 <- mapply(function(w,z,x) ifelse(w==1, rexp(1,1/10),
+						ifelse(x>0.5, rexp(1,1/(6*z+4)),
+							rexp(1,1/(10*x+5)))), w=w, z=z, x=x)
+			y0 <- 10
+			y <- sapply(y1, function(y) min(y,y0))
+			Lambda_0 <- function(t) integrate(lambda_0,0,t)$value
+			Recurrent.T  <- function(i,z,w,y)
+				{	
+					x_i <- x_t(i)
+					lambda_i <- function(t) z*exp(b*x_i(t)+r*w)*lambda_0(t)
+					T <- gen_inhomo_poisson(lambda_i, y)
+					if(is.null(T)){T <- numeric(0)}
+					T
+				}
+			T <- mapply(Recurrent.T, i=seq_along(y), z=z, w=w, y=y)
+		
+			X_t <- list()
+			for (i in seq(length(y))) {
+				X_t[[i]] = x_t(i) 
+			}
+			return(new("Huang2010", w=w, X_t=X_t, y=y,t=T))	
+		}
+
+obj <- Gen_data_Huang2010(n=400, par=par)
+
+#process of X_t for subject 1
+obj@X_t[[1]](1:10)
+
+
+
+
+
+
+
+
+
+
