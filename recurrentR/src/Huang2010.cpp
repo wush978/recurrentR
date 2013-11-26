@@ -4,6 +4,10 @@
 using namespace Rcpp;
 
 typedef std::vector< std::vector< std::vector< std::vector<double> > > > Rao;
+typedef std::vector< std::vector<int> > TIndex;
+inline const double X_value_get(const double* X_value, const int* dim, int i, int j, int k) {
+  return X_value[i + j * dim[0] + k * dim[0] * dim[1]];
+}
 
 SEXP init_vrao(const int p, const int n, std::vector<Rao*>& rao) {
   List retval(p);
@@ -68,18 +72,17 @@ SEXP rao_gen(Function f, IntegerVector m, List t, NumericVector y, int p) {
 
 
 inline const double rao_array(const double* X_value, int i, int j, int col_k, int col_l, int* dim, int r) {
-  int offset = r * dim[0] * dim[1];
-  return X_value[i + col_l * dim[0] + offset] + 
-    X_value[j + col_k * dim[0] + offset] -
-    X_value[i + col_k * dim[0] + offset] -
-    X_value[j + col_l * dim[0] + offset];
+  return X_value_get(X_value, dim, i, col_l, r) +
+    X_value_get(X_value, dim, j, col_k, r) -
+    X_value_get(X_value, dim, i, col_k, r) -
+    X_value_get(X_value, dim, j, col_l, r);
 }
 
 // [[Rcpp::export]]
 SEXP t_index_gen(IntegerVector m, List t, NumericVector s) {
   BEGIN_RCPP
-  XPtr< std::vector< std::vector<int> > > retval(new std::vector< std::vector<int> >());
-  std::vector< std::vector<int> >& t_index(*retval);
+  XPtr< TIndex > retval(new TIndex());
+  TIndex& t_index(*retval);
   int n = t.size();
   { // construct t_index
     t_index.resize(n);
@@ -104,7 +107,7 @@ SEXP rao_gen_array(NumericVector X_value, IntegerVector m, List t, NumericVector
   IntegerVector dim(wrap(X_value.attr("dim")));
   int p = dim[2];
   
-  const std::vector< std::vector< int > >& t_index(*XPtr< std::vector< std::vector< int > > >(Rt_index));
+  const TIndex& t_index(*XPtr< TIndex >(Rt_index));
 
   std::vector<Rao*> rao;
   List retval(init_vrao(p, n, rao));
@@ -273,8 +276,24 @@ SEXP V1_hat(List pRao_list, NumericVector beta) {
 }
 
 //[[Rcpp::export]]
-SEXP d_beta(List pRao_list, NumericVector beta) {
+SEXP d_beta(NumericVector beta, NumericVector X_value, SEXP Rt_index) {
   BEGIN_RCPP
-  
+  const TIndex& t_index(*XPtr< TIndex >(Rt_index));
+  IntegerVector dim(wrap(X_value.attr("dim")));
+  int *pdim = INTEGER(wrap(dim));
+  double *pX_value = REAL(wrap(X_value));
+  NumericVector d(dim[1]);
+  d.fill(0);
+  for(int i = 0;i < t_index.size();i++) {
+    for(int j = 0;j < t_index[i].size();j++) {
+      int index = t_index[i][j];
+      double temp = 0;
+      for(int r = 0;r < dim[2];r++) {
+        temp += X_value_get(pX_value, pdim, i, index, r) * beta[r];
+      }
+      d[index] += exp(- temp);
+    }
+  }
+  return d;
   END_RCPP
 }

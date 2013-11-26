@@ -100,8 +100,9 @@ d_beta.gen <- function(obj) {
   key <- "d_beta"
   if (!is_cache(obj, key)) {
     beta.hat <- beta.hat.gen(obj)
-    pRao <- pRao.gen(obj)
     X.value <- X.value.gen(obj)
+    t_index <- t_index.gen(obj)
+    obj@cache[[key]] <- d_beta(beta.hat, X.value, t_index)
   }
   obj@cache[[key]]
 }
