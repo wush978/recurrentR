@@ -76,13 +76,11 @@ inline const double rao_array(const double* X_value, int i, int j, int col_k, in
 }
 
 // [[Rcpp::export]]
-SEXP rao_gen_array(NumericVector X_value, IntegerVector m, List t, NumericVector y, NumericVector s) {
+SEXP t_index_gen(IntegerVector m, List t, NumericVector s) {
   BEGIN_RCPP
+  XPtr< std::vector< std::vector<int> > > retval(new std::vector< std::vector<int> >());
+  std::vector< std::vector<int> >& t_index(*retval);
   int n = t.size();
-  IntegerVector dim(wrap(X_value.attr("dim")));
-  int p = dim[2];
-  
-  std::vector< std::vector< int > > t_index;
   { // construct t_index
     t_index.resize(n);
     for(int i = 0;i < n;i++) {
@@ -95,6 +93,18 @@ SEXP rao_gen_array(NumericVector X_value, IntegerVector m, List t, NumericVector
       }
     }
   }
+  return retval;
+  END_RCPP
+}
+
+// [[Rcpp::export]]
+SEXP rao_gen_array(NumericVector X_value, IntegerVector m, List t, NumericVector y, SEXP Rt_index) {
+  BEGIN_RCPP
+  int n = y.size();
+  IntegerVector dim(wrap(X_value.attr("dim")));
+  int p = dim[2];
+  
+  const std::vector< std::vector< int > >& t_index(*XPtr< std::vector< std::vector< int > > >(Rt_index));
 
   std::vector<Rao*> rao;
   List retval(init_vrao(p, n, rao));
@@ -259,5 +269,12 @@ SEXP V1_hat(List pRao_list, NumericVector beta) {
     }
   }
   return retval;
+  END_RCPP
+}
+
+//[[Rcpp::export]]
+SEXP d_beta(List pRao_list, NumericVector beta) {
+  BEGIN_RCPP
+  
   END_RCPP
 }
