@@ -258,7 +258,7 @@ e.hat.i.gen <- function(obj) {
     for(i in seq_len(obj@n)) {
       term_1 <- (w * m * b.hat.y[i,] * Lambda_0.hat.y.inv)
       term_2 <- m[i] *  Lambda_0.hat.y.inv[i]
-      retval[[i]] <- as.vector(term_1 %*% W.bar) / obj@n + (w[i] * W.bar[i,] * (term_2  - exp(W.bar[i,] %*% gamma.bar.hat)))
+      retval[[i]] <- - as.vector(term_1 %*% W.bar) / obj@n + (w[i] * W.bar[i,] * (term_2  - exp(W.bar[i,] %*% gamma.bar.hat)))
     }
     obj@cache[["e.hat.i"]] <- do.call(cbind, retval)
   }
