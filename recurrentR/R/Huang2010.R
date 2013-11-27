@@ -122,3 +122,64 @@ R_beta.gen <- function(obj) {
   }
   obj@cache[[key]]
 }
+
+Lambda_0.hat_Huang2010.gen <- function(obj) {
+  key <- "Lambda_0.hat_Huang2010"
+  if (!is_cache(obj, key)) {
+    d_beta <- d_beta.gen(obj)
+    R_beta <- R_beta.gen(obj)
+    x <- obj@s
+    y <- append(rev(cumprod(rev(1 - d_beta/R_beta))), 1)
+    f <- stepfun(x, y)
+    obj@cache[[key]] <- f
+  }
+  obj@cache[[key]]
+}
+
+Lambda_0.hat_Huang2010.Y.adj.gen <- function(obj) {
+  key <- "Lambda_0.hat_Huang2010.Y.adj"
+  if (!is_cache(obj, key)) {
+    beta.hat <- beta.hat.gen(obj)
+    X.value <- X.value.gen(obj)
+    Lambda_0.hat_Huang2010.s <- Lambda_0.hat_Huang2010.gen(obj)(obj@s)
+    s.bar <- c(0, obj@s)
+    retval <- rep(0, obj@n)
+    for(i in 1:obj@n) {
+      index <- which(obj@s <= obj@y[i])
+      X_u_beta <- as.vector(matrix(X.value[i,index,], ncol = obj@X_dim) %*% beta.hat)
+      retval[i] <- diff(c(0, Lambda_0.hat_Huang2010.s[index])) %*% exp(X_u_beta)
+    }
+    obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
+
+Lambda_0.hat_Huang2010.Y.adj.inv.gen <- function(obj) {
+  key <- "Lambda_0.hat_Huang2010.Y.adj.inv"
+  if (!is_cache(obj, key)) {
+    Lambda_0.hat_Huang2010.Y.adj <- Lambda_0.hat_Huang2010.Y.adj.gen(obj)
+    retval <- 1 / Lambda_0.hat_Huang2010.Y.adj
+    retval[Lambda_0.hat_Huang2010.Y.adj == 0] <- 0
+    obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
+
+
+gamma.bar.hat_Huang2010.gen <- function(obj) {
+  key <- "gamma.bar.hat_Huang2010"
+  if (!is_cache(obj, key)) {
+    beta.hat <- beta.hat.gen(obj)
+    X.value <- X.value.gen(obj)
+    Lambda_0.hat_Huang2010.Y.adj.inv <- Lambda_0.hat_Huang2010.Y.adj.inv.gen(obj)
+    W.bar <- cbind(1, obj@W)
+    b <- m.gen(obj) * Lambda_0.hat_Huang2010.Y.adj.inv
+    gamma.bar.hat <- rep(0, ncol(W.bar))
+    g <- function(gamma) t(W.bar) %*% (b - exp(W.bar %*% gamma))
+    g.grad <- function(gamma) - t(W.bar) %*% diag(c(exp(W.bar %*% gamma)), nrow(W.bar), nrow(W.bar)) %*% W.bar
+    slv <- nleqslv(gamma.bar.hat, g, jac=g.grad)
+    if (sum(abs(g(slv$x))) > obj@tol) stop("Failed to converge during solving gamma")
+    obj@cache[[key]] <- slv$x
+  }
+  obj@cache[[key]]
+}
