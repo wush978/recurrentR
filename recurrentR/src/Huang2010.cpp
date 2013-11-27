@@ -100,6 +100,14 @@ SEXP t_index_gen(IntegerVector m, List t, NumericVector s) {
   END_RCPP
 }
 
+SEXP t_index_query(SEXP Rt_index, int i, int j, bool is_R_index = true) {
+  BEGIN_RCPP
+  const TIndex& t_index(*XPtr< TIndex >(Rt_index));
+  if (is_R_index) return wrap(t_index[i-1][j-1] + 1);
+  else return wrap(t_index[i][j]);
+  END_RCPP
+}
+
 // [[Rcpp::export]]
 SEXP rao_gen_array(NumericVector X_value, IntegerVector m, List t, NumericVector y, SEXP Rt_index) {
   BEGIN_RCPP
@@ -295,5 +303,31 @@ SEXP d_beta(NumericVector beta, NumericVector X_value, SEXP Rt_index) {
     }
   }
   return d;
+  END_RCPP
+}
+
+//[[Rcpp::export]]
+SEXP R_beta(NumericVector beta, NumericVector X_value, SEXP Rt_index, IntegerVector s_upper_index) {
+  BEGIN_RCPP
+  const TIndex& t_index(*XPtr< TIndex >(Rt_index));
+  IntegerVector dim(wrap(X_value.attr("dim")));
+  int *pdim = INTEGER(wrap(dim));
+  double *pX_value = REAL(wrap(X_value));
+  NumericVector R(dim[1]);
+  R.fill(0);
+  for(int i = 0;i < t_index.size();i++) {
+    for(int j = 0;j < t_index[i].size();j++) {
+      int index = t_index[i][j];
+      double temp = 0;
+      for(int r = 0;r < dim[2];r++) {
+        temp += X_value_get(pX_value, pdim, i, index, r) * beta[r];
+      }
+      temp = exp(- temp);
+      for(int k = index;k < s_upper_index[i];k++) {
+        R[k] += temp;
+      }
+    }
+  }
+  return R;
   END_RCPP
 }

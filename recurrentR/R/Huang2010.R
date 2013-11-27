@@ -106,3 +106,19 @@ d_beta.gen <- function(obj) {
   }
   obj@cache[[key]]
 }
+
+R_beta.gen <- function(obj) {
+  key <- "R_beta"
+  if (!is_cache(obj, key)) {
+    beta.hat <- beta.hat.gen(obj)
+    X.value <- X.value.gen(obj)
+    t_index <- t_index.gen(obj)
+    y_vs_s <- outer(obj@y, obj@s, ">=")
+    s_index_upper <- apply(y_vs_s, 1, function(a) {
+      retval <- which(!a)
+      ifelse(length(retval) == 0, length(obj@s), min(retval) - 1)
+    })
+    obj@cache[[key]] <- R_beta(beta.hat, X.value, t_index, s_index_upper)
+  }
+  obj@cache[[key]]
+}
