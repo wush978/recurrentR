@@ -9,10 +9,7 @@ Lambda_0.hat.gen <- function(obj) {
     x <- s
     y <- append(rev(cumprod(rev(1 - d/N))), 1)
     f <- stepfun(x, y)
-    obj@cache[["Lambda_0.hat"]] <- function(t, bootstrap = FALSE, B = 100, error.measurement.function = stats::sd) {
-      if (!bootstrap) return(f(t))
-      stop("TODO: bootstrap")
-    }
+    obj@cache[["Lambda_0.hat"]] <- f
   }
   obj@cache[["Lambda_0.hat"]]
 }
