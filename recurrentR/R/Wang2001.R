@@ -75,10 +75,12 @@ Q.hat <- function(obj) {
 }
 
 Q.hat.c <- function(obj) {
-  s <- obj@s
-  d <- obj@d
-  N <- cumsum(d)
-  new(StepFunction, s, c(0, N)/length(obj@y))
+  key <- "Q.hat.c"
+  if (!is_cache(obj, key)) {
+    N <- cumsum(obj@d)
+    obj@cache[[key]] <- new(StepFunction, obj@s, c(0, N)/obj@n)
+  }
+  obj@cache[[key]]
 }
 
 R.hat <- function(obj) {
@@ -91,13 +93,17 @@ R.hat <- function(obj) {
 }
 
 R.hat.c <- function(obj) {
-  s <- obj@s
-  d <- obj@d
-  N <- cumsum(d)
-  y.i <- order(obj@y)
-  m <- sapply(obj@t, length)
-  N <- N + eval_N(s, obj@y[y.i], m[y.i])
-  new(StepFunction, s, c(0, N/length(obj@y)))	
+  key <- "R.hat.c"
+  if (!is_cache(obj, key)) {
+    s <- obj@s
+    d <- obj@d
+    N <- cumsum(d)
+    y.i <- order(obj@y)
+    m <- sapply(obj@t, length)
+    N <- N + eval_N(s, obj@y[y.i], m[y.i])
+    obj@cache[[key]] <- new(StepFunction, s, c(0, N/length(obj@y)))	
+  }
+  obj@cache[[key]]
 }
 
 b.hat <- function(obj, i) {
