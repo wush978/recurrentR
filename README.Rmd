@@ -279,7 +279,7 @@ where
 
 Let $$S(\beta) = \frac{1}{\left(\begin{array}{c} n \\ 2 \end{array}\right)} \sum_{i < j}{g_{i,j}(\beta)},$$
 
-Then $$\frac{dS}{d\beta}(\beta) = \sum_{i<j} {\frac{dg_{i,j}}{d\beta}(\beta)} ,$$
+Then $$\frac{dS}{d\beta}(\beta) = \frac{1}{\left(\begin{array}{c} n \\ 2 \end{array}\right)} \sum_{i<j} {\frac{dg_{i,j}}{d\beta}(\beta)} ,$$
 
 where:
 
@@ -333,7 +333,7 @@ $$E(\frac{d\xi}{d\gamma})^{-1} \Sigma E(\frac{d\xi}{d\gamma})^{-1}$$.
 
 To obtain the definition of $\kappa$, we need:
 
-- $\hat{Q}(u) = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { I(t_{i,j} \leq u) exp(X_i(t_{i,j}) \hat{\beta}) } }$
+- $\hat{Q}(u) = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { I(t_{i,j} \leq u) exp(- X_i(t_{i,j}) \hat{\beta}) } }$
 - $\hat{R}(u) = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { I(t_{i,j} \leq u \leq y_i) exp(- X_i(t_{i,j}) \hat{\beta}) } }$
 - $\hat{V}_{\tilde{Q}}(u) = E \frac{dQ}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u) exp(- X_i(t_{i,j}) \hat{\beta}) } }$ 
 - $\hat{V}_{\tilde{R}}(u) = E \frac{dR}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u \leq y_i) exp(- X_i(t_{i,j}) \hat{\beta}) } }$
