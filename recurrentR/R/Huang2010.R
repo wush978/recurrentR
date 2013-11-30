@@ -96,13 +96,25 @@ V2.hat.gen <- function(obj) {
   obj@cache[[key]]
 }
 
+d_beta.R <- function(obj) {
+  beta.hat <- beta.hat.gen(obj)
+  retval <- numeric(length(obj@s))
+  for(i in seq_along(obj@t)) {
+    for(j in seq_along(obj@t[[i]])) {
+      index <- which(obj@t[[i]][j] == obj@s)
+      retval[index] <- retval[index] + exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat)
+    }
+  }
+  retval / obj@n
+}
+
 d_beta.gen <- function(obj) {
   key <- "d_beta"
   if (!is_cache(obj, key)) {
     beta.hat <- beta.hat.gen(obj)
     X.value <- X.value.gen(obj)
     t_index <- t_index.gen(obj)
-    obj@cache[[key]] <- d_beta(beta.hat, X.value, t_index)
+    obj@cache[[key]] <- d_beta(beta.hat, X.value, t_index) / obj@n
   }
   obj@cache[[key]]
 }
@@ -118,7 +130,7 @@ R_beta.gen <- function(obj) {
       retval <- which(!a)
       ifelse(length(retval) == 0, length(obj@s), min(retval) - 1)
     })
-    obj@cache[[key]] <- R_beta(beta.hat, X.value, t_index, s_index_upper)
+    obj@cache[[key]] <- R_beta(beta.hat, X.value, t_index, s_index_upper) / obj@n
   }
   obj@cache[[key]]
 }
@@ -182,4 +194,40 @@ gamma.bar.hat_Huang2010.gen <- function(obj) {
     obj@cache[[key]] <- slv$x
   }
   obj@cache[[key]]
+}
+
+Q.hat_Huang2010 <- function(obj) {
+  beta.hat <- beta.hat.gen(obj)
+  function(u) {
+    retval <- 0
+    for(i in seq_along(obj@t)) {
+      for(j in seq_along(obj@t[[i]])) {
+        if (obj@t[[i]][j] > u) next
+        retval <- retval + exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat)
+      }
+    }
+    as.vector(retval/ obj@n)
+  }
+}
+
+Q.hat_Huang2010.c <- function(obj) {
+  key <- "Q.hat_Huang2010.c"
+  if (!is_cache(obj, key)) {
+    N <- cumsum(d_beta.gen(obj))
+    obj@cache[[key]] <- new(StepFunction, obj@s, c(0, N))
+  }
+  obj@cache[[key]]
+}
+
+R.hat_Huang2010.c <- function(obj) {
+#   key <- "R.hat_Huang2010.c"
+#   if (!is_cache(obj, key)) {
+#     s <- obj@s
+#     d <- d_beta.gen(obj)
+#     N <- cumsum(d)
+#     y.i <- order(obj@y)
+#     m <- sapply(obj@t, length)
+#     N <- N + eval_N(s, obj@y[y.i], m[y.i])
+#     obj@cache[[key]] <- new(StepFunction, s, c(0, N/length(obj@y)))  
+#   }
 }
