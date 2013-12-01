@@ -1,13 +1,22 @@
-Lambda_0.hat.gen <- function(obj) {
-  if (!exists("Lambda_0.hat", envir=obj@cache, inherits=FALSE)) {
+R.s.gen <- function(obj) {
+  key <- "R.s"
+  if (!is_cache(obj, key)) {
     s <- obj@s
     d <- obj@d
     N <- cumsum(d)
     y.i <- order(obj@y)
     m <- sapply(obj@t, length)
     N <- N + eval_N(s, obj@y[y.i], m[y.i])
-    x <- s
-    y <- append(rev(cumprod(rev(1 - d/N))), 1)
+    obj@cache[[key]] <- N
+  }
+  obj@cache[[key]]
+}
+
+Lambda_0.hat.gen <- function(obj) {
+  if (!exists("Lambda_0.hat", envir=obj@cache, inherits=FALSE)) {
+    N <- R.s.gen(obj)
+    x <- obj@s
+    y <- append(rev(cumprod(rev(1 - obj@d/N))), 1)
     f <- stepfun(x, y)
     obj@cache[["Lambda_0.hat"]] <- f
   }
@@ -84,24 +93,24 @@ Q.hat.c <- function(obj) {
 }
 
 R.hat <- function(obj) {
-  s <- obj@s
-  y <- sapply(c(0, s), function(u) mean(sapply(1:length(obj@t), function(i) {
-    sum(obj@t[[i]] <= u & u <= obj@y[i])
-  })))
-  f <- stepfun(s, y)
-  return(f)
+  function(u) {
+    retval <- 0
+    for(i in seq_along(obj@t)) {
+      if (u > obj@y[i]) next
+      for(j in seq_along(obj@t[[i]])) {
+        if (u < obj@t[[i]][j]) next
+        retval <- retval + 1
+      }
+    }
+    retval / obj@n
+  }
 }
 
 R.hat.c <- function(obj) {
   key <- "R.hat.c"
   if (!is_cache(obj, key)) {
-    s <- obj@s
-    d <- obj@d
-    N <- cumsum(d)
-    y.i <- order(obj@y)
-    m <- sapply(obj@t, length)
-    N <- N + eval_N(s, obj@y[y.i], m[y.i])
-    obj@cache[[key]] <- new(StepFunction, s, c(0, N/length(obj@y)))	
+    N <- R.s.gen(obj)
+    obj@cache[[key]] <- new(StepFunction, obj@s, c(0, N/length(obj@y)))	
   }
   obj@cache[[key]]
 }
