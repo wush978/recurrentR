@@ -119,6 +119,24 @@ d_beta.gen <- function(obj) {
   obj@cache[[key]]
 }
 
+R_beta.R <- function(obj) {
+  beta.hat <- beta.hat.gen(obj)
+  retval <- numeric(length(obj@s))
+  for(i in seq_along(obj@t)) {
+    index_upper <- tail(which(obj@s <= obj@y[i]), 1)
+    if (length(index_upper) == 0) next
+    for(j in seq_along(obj@t[[i]])) {
+      index_lower <- which(obj@t[[i]][j] == obj@s)
+      value <- exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat)
+      if (index_lower > index_upper) next
+      for(k in index_lower:index_upper) {
+        retval[k] <- retval[k] + value
+      }
+    }
+  }
+  retval / obj@n
+}
+
 R_beta.gen <- function(obj) {
   key <- "R_beta"
   if (!is_cache(obj, key)) {
@@ -219,15 +237,26 @@ Q.hat_Huang2010.c <- function(obj) {
   obj@cache[[key]]
 }
 
-R.hat_Huang2010.c <- function(obj) {
-#   key <- "R.hat_Huang2010.c"
-#   if (!is_cache(obj, key)) {
-#     s <- obj@s
-#     d <- d_beta.gen(obj)
-#     N <- cumsum(d)
-#     y.i <- order(obj@y)
-#     m <- sapply(obj@t, length)
-#     N <- N + eval_N(s, obj@y[y.i], m[y.i])
-#     obj@cache[[key]] <- new(StepFunction, s, c(0, N/length(obj@y)))  
-#   }
+R.hat_Huang2010.R <- function(obj) {
+  beta.hat <- beta.hat.gen(obj)
+  function(u) {
+    retval <- 0
+    for(i in seq_along(obj@t)) {
+      if (u > obj@y[i]) next
+      for(j in seq_along(obj@t[[i]])) {
+        if (u < obj@t[[i]][j]) next
+        retval <- retval + exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat)
+      }
+    }
+    as.vector(retval) / obj@n
+  }
 }
+
+R.hat_Huang2010.c <- function(obj) {
+  key <- "R.hat_Huang2010.c"
+  if (!is_cache(obj, key)) {
+    R_beta <- R_beta.gen(obj)
+    obj@cache[[key]] <- new(StepFunction, obj@s, c(0, R_beta))  
+  }
+}
+
