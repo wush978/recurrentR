@@ -260,3 +260,46 @@ R.hat_Huang2010.c <- function(obj) {
   }
 }
 
+V.hat_tilde_Q.R <- function(obj) {
+  X.value <- X.value.gen(obj)
+  beta.hat <- beta.hat.gen(obj)
+  function(u) {
+    retval <- numeric(obj@X_dim)
+    for(i in seq_along(obj@t)) {
+      for(j in seq_along(obj@t[[i]])) {
+        if (obj@t[[i]][j] > u) next
+        retval <- retval - exp( - as.vector(X.value[i,j,] %*% beta.hat) ) * X.value[i,j,]
+      }
+    }
+    retval / obj@n
+  }
+}
+
+t_index.inverse.gen <- function(obj) {
+  key <- "t_index.inverse"
+  if (!is_cache(obj, key)) {
+    obj@cache[[key]] <- t_index_inverse_gen(t_index.gen(obj), obj@s)
+  }
+  obj@cache[[key]]
+}
+
+V.hat_tilde_Q.gen <- function(obj) {
+  key <- "V.hat_tilde_Q"
+  if (!is_cache(obj, key)) {
+    temp <- V_hat_tilde_Q_gen(beta.hat.gen(obj), X.value.gen(obj), t_index.inverse.gen(obj))
+    obj@cache[[key]] <- lapply(temp, function(d) {
+      new(StepFunction, obj@s, d/obj@n)
+    })
+  }
+  obj@cache[[key]]
+}
+
+V.hat_tilde_Q.s.gen <- function(obj) {
+  key <- "V.hat_tilde_Q.s"
+  if (!is_cache(obj, key)) {
+    V.hat_tilde_Q <- V.hat_tilde_Q.gen(obj)
+    obj@cache[[key]] <- matrix(sapply(V.hat_tilde_Q, function(o) o$sort_call(obj@s)), length(obj@s), obj@X_dim)
+  }
+  obj@cache[[key]]
+}
+

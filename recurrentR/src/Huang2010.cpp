@@ -100,6 +100,26 @@ SEXP t_index_gen(IntegerVector m, List t, NumericVector s) {
   END_RCPP
 }
 
+//[[Rcpp::export]]
+SEXP t_index_inverse_gen(SEXP Rt_index, NumericVector s) {
+  BEGIN_RCPP
+  const TIndex& t_index(*XPtr< TIndex >(Rt_index));
+  XPtr< TIndex > pretval_i(new TIndex()), pretval_j(new TIndex());
+  TIndex &retval_i(*pretval_i), &retval_j(*pretval_j);
+  retval_i.resize(s.size());
+  retval_j.resize(s.size());
+  for(int i = 0;i < t_index.size();i++) {
+    for(int j = 0;j < t_index[i].size();j++) {
+      
+      retval_i[t_index[i][j]].push_back(i);
+      retval_j[t_index[i][j]].push_back(j);
+    }
+  }
+  return List::create(Named("i") = pretval_i, Named("j") = pretval_j);
+  END_RCPP
+}
+
+//[[Rcpp::export]]
 SEXP t_index_query(SEXP Rt_index, int i, int j, bool is_R_index = true) {
   BEGIN_RCPP
   const TIndex& t_index(*XPtr< TIndex >(Rt_index));
@@ -329,5 +349,40 @@ SEXP R_beta(NumericVector beta, NumericVector X_value, SEXP Rt_index, IntegerVec
     }
   }
   return R;
+  END_RCPP
+}
+
+//[[Rcpp::export]]
+SEXP V_hat_tilde_Q_gen(NumericVector beta, NumericVector X_value, List t_index_inverse) {
+  BEGIN_RCPP
+  IntegerVector dim(wrap(X_value.attr("dim")));
+  int *pdim = INTEGER(wrap(dim));
+  double *pX_value = &X_value[0];
+  XPtr< TIndex > pretval_i(wrap(t_index_inverse["i"])), pretval_j(wrap(t_index_inverse["j"]));
+  const TIndex &retval_i(*pretval_i), &retval_j(*pretval_j);
+  // X_value_get(pX_value, pdim)
+  List retval(pdim[2]);
+  std::vector< NumericVector* > retval_cache;
+  for(int l = 0;l < pdim[2];l++) {
+    retval_cache.push_back(new NumericVector(pdim[1] + 1));
+    (*retval_cache[l])[0] = 0;
+  }
+  for(int s = 0;s < pdim[1];s++) {
+    for(int t = 0;t < retval_i[s].size();t++) {
+      int i = retval_i[s][t], j = retval_j[s][t];
+      double temp = 0;
+      for(int r = 0;r < pdim[2];r++) {
+        temp += beta[r] * X_value_get(pX_value, pdim, i, j, r);
+      }
+      temp = exp(-temp);
+      for(int l = 0;l < pdim[2];l++) {
+        (*retval_cache[l])[s + 1] = (*retval_cache[l])[s] - temp * X_value_get(pX_value, pdim, i, j, l);
+      }
+    }
+  }
+  for(int l = 0;l < pdim[2];l++) {
+    retval[l] = (*retval_cache[l]);
+  }
+  return retval;
   END_RCPP
 }
