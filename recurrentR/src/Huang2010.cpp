@@ -353,35 +353,59 @@ SEXP R_beta(NumericVector beta, NumericVector X_value, SEXP Rt_index, IntegerVec
 }
 
 //[[Rcpp::export]]
-SEXP V_hat_tilde_Q_gen(NumericVector beta, NumericVector X_value, List t_index_inverse) {
+SEXP V_hat_tilde_Q_s_gen(NumericVector beta, NumericVector X_value, SEXP Rt_index) {
   BEGIN_RCPP
+  const TIndex& t_index(*XPtr< TIndex >(Rt_index));
   IntegerVector dim(wrap(X_value.attr("dim")));
   int *pdim = INTEGER(wrap(dim));
-  double *pX_value = &X_value[0];
-  XPtr< TIndex > pretval_i(wrap(t_index_inverse["i"])), pretval_j(wrap(t_index_inverse["j"]));
-  const TIndex &retval_i(*pretval_i), &retval_j(*pretval_j);
-  // X_value_get(pX_value, pdim)
-  List retval(pdim[2]);
-  std::vector< NumericVector* > retval_cache;
-  for(int l = 0;l < pdim[2];l++) {
-    retval_cache.push_back(new NumericVector(pdim[1] + 1));
-    (*retval_cache[l])[0] = 0;
-  }
-  for(int s = 0;s < pdim[1];s++) {
-    for(int t = 0;t < retval_i[s].size();t++) {
-      int i = retval_i[s][t], j = retval_j[s][t];
+  double *pX_value = REAL(wrap(X_value));
+  NumericMatrix retval(pdim[1], pdim[2]);
+  retval.fill(0);
+  for(int i = 0;i < t_index.size();i++) {
+    for(int j = 0;j < t_index[i].size();j++) {
+      int index = t_index[i][j];
       double temp = 0;
-      for(int r = 0;r < pdim[2];r++) {
-        temp += beta[r] * X_value_get(pX_value, pdim, i, j, r);
+      for(int r = 0;r < dim[2];r++) {
+        temp += X_value_get(pX_value, pdim, i, index, r) * beta[r];
       }
-      temp = exp(-temp);
-      for(int l = 0;l < pdim[2];l++) {
-        (*retval_cache[l])[s + 1] = (*retval_cache[l])[s] - temp * X_value_get(pX_value, pdim, i, j, l);
+      temp = exp(- temp);
+      for(int r = 0;r < dim[2];r++) {
+        retval(index, r) -= X_value_get(pX_value, pdim, i, index, r) * temp;
       }
     }
   }
-  for(int l = 0;l < pdim[2];l++) {
-    retval[l] = (*retval_cache[l]);
+  for(int s = 1;s < pdim[1];s++) {
+    for(int r = 0;r < pdim[2];r++) {
+      retval(s, r) += retval(s-1, r);
+    }
+  }
+  return retval;
+  END_RCPP
+}
+
+//[[Rcpp::export]]
+SEXP V_hat_tilde_R_s_gen(NumericVector beta, NumericVector X_value, SEXP Rt_index, IntegerVector s_upper_index) {
+  BEGIN_RCPP
+  const TIndex& t_index(*XPtr< TIndex >(Rt_index));
+  IntegerVector dim(wrap(X_value.attr("dim")));
+  int *pdim = INTEGER(wrap(dim));
+  double *pX_value = REAL(wrap(X_value));
+  NumericMatrix retval(pdim[1], pdim[2]);
+  retval.fill(0);
+  for(int i = 0;i < t_index.size();i++) {
+    for(int j = 0;j < t_index[i].size();j++) {
+      int index = t_index[i][j];
+      double temp = 0;
+      for(int r = 0;r < dim[2];r++) {
+        temp += X_value_get(pX_value, pdim, i, index, r) * beta[r];
+      }
+      temp = exp(- temp);
+      for(int k = index;k < s_upper_index[i];k++) {
+        for(int r = 0;r < dim[2];r++) {
+          retval(k, r) += - X_value_get(pX_value, pdim, i, index, r) * temp;
+        }
+      }
+    }
   }
   return retval;
   END_RCPP
