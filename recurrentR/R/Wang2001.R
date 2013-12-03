@@ -106,6 +106,7 @@ R.hat <- function(obj) {
   }
 }
 
+# This implemtation is incorrect. However, it gives the correct answer on `obj@s` which is the place only needed.
 R.hat.c <- function(obj) {
   key <- "R.hat.c"
   if (!is_cache(obj, key)) {
