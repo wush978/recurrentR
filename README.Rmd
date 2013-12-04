@@ -338,7 +338,7 @@ To obtain the definition of $\kappa$, we need:
 - $\hat{V}_{\tilde{Q}}(u) = E \frac{dQ}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u) exp(- X_i(t_{i,j}) \hat{\beta}) } }$ 
 - $\hat{V}_{\tilde{R}}(u) = E \frac{dR}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u \leq y_i) exp(- X_i(t_{i,j}) \hat{\beta}) } }$
 - $\hat{\phi}_{i,j}(t) = \left(\int_t^{T_0} { \frac{d\hat{V}_{\tilde{Q}}(u)}{\hat{R}(u)} - \frac{\hat{V}_{\tilde{R}}(u) d\hat{Q}(u)}{\hat{R}(u)^2} }\right)\hat{V}_2^{-1} g_{i,j}(\hat{\beta}) = \left(\sum_{t \leq s_{(l)}}{\frac{\hat{V}_{\tilde{Q}}(s_{(l)}) - \hat{V}_{\tilde{Q}}(s_{(l-1)})}{\hat{R}(s_{(l)})}} - \sum_{t \leq s_{(l)}}{\frac{\hat{V}_{\tilde{R}}(s_{(l)})(\hat{Q}(s_{(l)}) - \hat{Q}(s_{(l-1)}))}{\hat{R}(s_{(l)})^2}} \right)\hat{V}_2^{-1} g_{i,j}(\hat{\beta})$ 
-- $\hat{\psi}_i(t) = \sum_{j=1}^{m_i}{I( t < t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \int_t^{T_0} {I(t_{i,j} \leq u \leq y_i) exp(X_i(t_{i,j}) \hat{\beta}) \frac{d \hat{Q}(u)}{\hat{R}(u)^2} } = \sum_{j=1}^{m_i}{I( t < t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \left( \sum_{s_{(l)} > t} { I(t_{i,j} \leq s_{(l)} \leq y_i) exp(X_i(t_{i,j}) \hat{\beta}) \frac{(\hat{Q}(s_{(l)}) - \hat{Q}(s_{(l-1)}))}{\hat{R}(s_{(l)})^2} } \right)$
+- $\hat{\psi}_i(t) = \sum_{j=1}^{m_i}{I( t < t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \int_t^{T_0} {I(t_{i,j} \leq u \leq y_i) exp(X_i(t_{i,j}) \hat{\beta}) \frac{d \hat{Q}(u)}{\hat{R}(u)^2} } = \sum_{j=1}^{m_i}{I( t < t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \left( \sum_{s_{(l)} > t} { I(t_{i,j} \leq s_{(l)} \leq y_i) exp(-X_i(t_{i,j}) \hat{\beta}) \frac{(\hat{Q}(s_{(l)}) - \hat{Q}(s_{(l-1)}))}{\hat{R}(s_{(l)})^2} } \right)$
 
 Then
 
