@@ -198,6 +198,31 @@ const std::vector<Rao*> get_rao_vec(List& pRao_list) {
 }
 
 // [[Rcpp::export]]
+SEXP g_ij(List pRao_list, NumericVector beta, int Ri, int Rj) {
+  BEGIN_RCPP
+  if (Ri >= Rj) throw std::invalid_argument("Ri < Rj");
+  const std::vector<Rao*> rao(get_rao_vec(pRao_list));
+  NumericVector retval(rao.size());
+  retval.fill(0);
+  double temp;
+  int n = rao[0]->size(), i = Ri - 1, j = Rj - 1;
+  for(int k = 0;k < (*rao[0])[i][j].size();k++) {
+    for(int l = 0;l < (*rao[0])[i][j][k].size();l++) {
+      temp = 0;
+      for(int r = 0;r < rao.size();r++) {
+        temp += (*rao[r])[i][j][k][l] * beta[r];
+      }
+      temp = exp(temp);
+      for(int r = 0;r < rao.size();r++) {
+        retval[r] -= (*rao[r])[i][j][k][l] * temp / (1 + temp);            
+      }
+    }
+  }
+  return retval;
+  END_RCPP
+}
+
+// [[Rcpp::export]]
 SEXP S(List pRao_list, NumericVector beta) {
   BEGIN_RCPP
   const std::vector<Rao*> rao(get_rao_vec(pRao_list));

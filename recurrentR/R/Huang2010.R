@@ -332,3 +332,73 @@ V.hat_tilde_R.s.gen <- function(obj) {
   }
   obj@cache[[key]]
 }
+
+phi.i.j.hat.s.R <- function(obj) {
+  key <- "phi.i.j.hat"
+  if (!is_cache(obj, key)) {
+    retval <- list()
+    beta.hat <- beta.hat.gen(obj)
+    V.hat_tilde_Q.s <- V.hat_tilde_Q.s.gen(obj)
+    V.hat_tilde_R.s <- V.hat_tilde_R.s.gen(obj)
+    R_beta <- R_beta.gen(obj)
+    Q.hat <- Q.hat_Huang2010.c(obj)
+    V2.hat <- V2.hat.gen(obj)
+    pRao.array <- pRao.gen.array(obj, X.value.gen(obj))
+    generator <- function(i,j) {
+      force(i)
+      force(j)
+      function(t) {
+        if (i == j) return(0)
+        term_1 <- rep(0, obj@X_dim)
+        term_2 <- rep(0, obj@X_dim)
+        for(si in seq_along(obj@s)) {
+          if (obj@s[si] < t) next
+          term_1 <- term_1 + as.vector(V.hat_tilde_Q.s[si,] - ifelse(si == 1, rep(0, obj@X_dim), V.hat_tilde_Q.s[si - 1,])) / R_beta[si]
+          term_2 <- term_2 + ifelse(si == 1, Q.hat$sort_call(c(0, obj@s[1])), Q.hat$sort_call(c(obj@s[si-1], obj@s[si]))) * V.hat_tilde_R.s[si,] / R_beta[si]^2
+        }
+        as.vector(solve(t(V2.hat), (term_1 - term_2)) %*% g_ij(pRao.array, beta.hat, i, j))
+      }
+    }
+    for(i in seq_len(obj@n)) {
+      retval[[i]] <- list()
+      for(j in seq_len(obj@n)) {
+        retval[[i]][[j]] <- generator(i,j)
+      }
+    }
+    obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
+
+psi_i.hat.gen <- function(obj) {
+  key <- "psi_i.hat"
+  if (!is_cache(obj, key)) {
+    retval <- list()
+    beta.hat <- beta.hat.gen(obj)
+    R_beta <- R_beta.gen(obj)
+    Q.hat <- Q.hat_Huang2010.c(obj)
+    t_index <- t_index.gen(obj)
+    generator <- function(i) {
+      force(i)
+      function(t) {
+        term_1 <- 0
+        term_2 <- 0
+        for(j in seq_along(obj@t[[i]])) {
+          if (t >= obj@t[[i]][j]) next
+          si <- t_index_query(t_index, i, j)
+          term_1 <- term_1 + 1 / R_beta[si]
+          while(ifelse(si <= length(obj@s), obj@s[si] <= obj@y[i], FALSE)) {
+            term_2 <- term_2 + exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat) * (ifelse(si == 1, Q.hat$sort_call(c(0, obj@s[1])), Q.hat$sort_call(c(obj@s[si-1], obj@s[si])))) / (R_beta[si]^2)
+            si <- si + 1
+          }
+        }
+        as.vector(term_1 - term_2)
+      }
+    }
+    for(i in seq_along(obj@t)) {
+      retval[[i]] <- generator(i)
+    }
+    obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
