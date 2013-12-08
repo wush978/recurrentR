@@ -342,6 +342,7 @@ phi.i.j.hat.s.R <- function(obj) {
     V.hat_tilde_R.s <- V.hat_tilde_R.s.gen(obj)
     R_beta <- R_beta.gen(obj)
     Q.hat <- Q.hat_Huang2010.c(obj)
+    d_beta <- d_beta.gen(obj)
     V2.hat <- V2.hat.gen(obj)
     pRao.array <- pRao.gen.array(obj, X.value.gen(obj))
     generator <- function(i,j) {
@@ -353,8 +354,16 @@ phi.i.j.hat.s.R <- function(obj) {
         term_2 <- rep(0, obj@X_dim)
         for(si in seq_along(obj@s)) {
           if (obj@s[si] < t) next
-          term_1 <- term_1 + as.vector(V.hat_tilde_Q.s[si,] - ifelse(si == 1, rep(0, obj@X_dim), V.hat_tilde_Q.s[si - 1,])) / R_beta[si]
-          term_2 <- term_2 + ifelse(si == 1, Q.hat$sort_call(c(0, obj@s[1])), Q.hat$sort_call(c(obj@s[si-1], obj@s[si]))) * V.hat_tilde_R.s[si,] / R_beta[si]^2
+          if (si == 1) {
+            term_1 <- term_1 + as.vector(V.hat_tilde_Q.s[si,]) / R_beta[si]
+            term_2 <- term_2 + Q.hat$sort_call(c(0, obj@s[1])) %*% V.hat_tilde_R.s[si,] / R_beta[si]^2
+          } else {
+            term_1 <- term_1 + as.vector(V.hat_tilde_Q.s[si,] - V.hat_tilde_Q.s[si - 1,]) / R_beta[si]
+            term_2 <- term_2 + diff(Q.hat$sort_call(c(obj@s[si-1], obj@s[si]))) * V.hat_tilde_R.s[si,] / R_beta[si]^2
+            
+          }
+#           term_1 <- term_1 + as.vector(V.hat_tilde_Q.s[si,] - ifelse(si == 1, rep(0, obj@X_dim), V.hat_tilde_Q.s[si - 1,])) / R_beta[si]
+#           term_2 <- term_2 + ifelse(si == 1, , ) * V.hat_tilde_R.s[si,] / R_beta[si]^2
         }
         as.vector(solve(t(V2.hat), (term_1 - term_2)) %*% g_ij(pRao.array, beta.hat, i, j))
       }
@@ -370,8 +379,40 @@ phi.i.j.hat.s.R <- function(obj) {
   obj@cache[[key]]
 }
 
-psi_i.hat.gen <- function(obj) {
-  key <- "psi_i.hat"
+phi.i.j.hat.s.gen <- function(obj) {
+  key <- "phi.i.j.hat.s"
+  if (!is_cache(obj, key)) {
+    beta.hat <- beta.hat.gen(obj)
+    V.hat_tilde_Q.s <- V.hat_tilde_Q.s.gen(obj)
+    V.hat_tilde_R.s <- V.hat_tilde_R.s.gen(obj)
+    R_beta <- R_beta.gen(obj)
+    Q.hat.s <- Q.hat_Huang2010.c(obj)$sort_call(obj@s)
+    V2.hat <- V2.hat.gen(obj)
+    pRao.array <- pRao.gen.array(obj, X.value.gen(obj))
+    term_1.mat <- phi_i_j_hat_s_gen(Q.hat.s, R_beta, V.hat_tilde_Q.s, V.hat_tilde_R.s)
+    term_1.slv <- solve(V2.hat, t(term_1.mat))
+    generator <- function(i,j) {
+      force(i)
+      force(j)
+      if (i == j) return(new(StepFunction, obj@s, rep(0, length(obj@s) + 1)))
+      retval <- new(StepFunction, obj@s, c(as.vector(g_ij(pRao.array, beta.hat, min(i,j), max(i,j)) %*% term_1.slv), 0))
+      retval$lower_bound <- TRUE
+      retval
+    }
+    retval <- list()
+    for(i in seq_len(obj@n)) {
+      retval[[i]] <- list()
+      for(j in seq_len(obj@n)) {
+        retval[[i]][[j]] <- generator(i,j)
+      }
+    }
+    obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
+
+psi_i.hat.R.gen <- function(obj) {
+  key <- "psi_i.hat.R"
   if (!is_cache(obj, key)) {
     retval <- list()
     beta.hat <- beta.hat.gen(obj)
@@ -384,14 +425,28 @@ psi_i.hat.gen <- function(obj) {
         term_1 <- 0
         term_2 <- 0
         for(j in seq_along(obj@t[[i]])) {
-          if (t >= obj@t[[i]][j]) next
           si <- t_index_query(t_index, i, j)
-          term_1 <- term_1 + 1 / R_beta[si]
+          term_1_delta <- 1 / R_beta[si]
           while(ifelse(si <= length(obj@s), obj@s[si] <= obj@y[i], FALSE)) {
-            term_2 <- term_2 + exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat) * (ifelse(si == 1, Q.hat$sort_call(c(0, obj@s[1])), Q.hat$sort_call(c(obj@s[si-1], obj@s[si])))) / (R_beta[si]^2)
+            if (si == 1) {
+              term_2_delta <- exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat) * 
+                diff(Q.hat$sort_call(c(0, obj@s[1]))) / 
+                (R_beta[si]^2)
+            } else {
+              term_2_delta <- exp(- obj@X[[i]](obj@t[[i]][j]) %*% beta.hat) * 
+                diff(Q.hat$sort_call(c(obj@s[si-1], obj@s[si]))) / 
+                (R_beta[si]^2)
+            }
+            if (obj@s[si] > t) {
+#               print(sprintf("si: %d term_2_delta: %.8f", si, term_2_delta))
+              term_2 <- term_2 + term_2_delta
+            }
             si <- si + 1
           }
+          if (t >= obj@t[[i]][j]) next
+          term_1 <- term_1 + term_1_delta
         }
+#         print(sprintf("term_1: %0.8f term_2: %0.8f", term_1, term_2))
         as.vector(term_1 - term_2)
       }
     }
@@ -399,6 +454,93 @@ psi_i.hat.gen <- function(obj) {
       retval[[i]] <- generator(i)
     }
     obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
+
+psi_i.hat.gen <- function(obj) {
+  key <- "psi_i.hat"
+  if (!is_cache(obj, key)) {
+    retval <- list()
+    beta.hat <- beta.hat.gen(obj)
+    R_beta <- R_beta.gen(obj)
+    Q.hat <- Q.hat_Huang2010.c(obj)
+    t_index <- t_index.gen(obj)
+    s_index_upper <- s_index_upper.gen(obj)
+    X.value <- X.value.gen(obj)
+    t_ij_vs_s <- recurrentR:::t_ij_vs_s.gen(obj)
+    generator <- function(i) {
+      force(i)
+      if (length(obj@t[[i]]) == 0) {
+        new(StepFunction, numeric(0), 0)
+      } else {
+        sj <- unlist(lapply(seq_along(obj@t[[i]]), function(j) t_index_query(t_index, i, j)))
+        R_beta.inv <- 1/R_beta[sj] # on obj@s[si]
+        retval1 <- new(StepFunction, obj@s[sj], c(rev(cumsum(rev(R_beta.inv))), 0))
+        si_u <- s_index_upper[i]
+        value <- diff(c(0, Q.hat$sort_call(obj@s[seq_len(si_u)]))) / 
+          R_beta[seq_len(si_u)]^2
+        indicator.mat <- local({
+          indicator.mat <- matrix(t_ij_vs_s[[i]][seq_len(si_u),], nrow = si_u)
+          indicator.mat <- t(indicator.mat)
+          t(indicator.mat * as.vector(exp(- X.value[i,sj,] %*% beta.hat)))
+        })
+        value.expand <- indicator.mat * value
+        retval2 <- new(StepFunction, obj@s[seq_len(si_u)], c(apply(apply(value.expand, 2, function(a) rev(cumsum(rev(a)))), 1, sum), 0))
+#         browser()
+        retval1 - retval2
+      }
+    }
+    for(i in seq_along(obj@t)) {
+      retval[[i]] <- generator(i)
+    }
+    obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
+
+
+kappa_i.j.gen <- function(obj) {
+  key <- "kappa_i.j"
+  if (!is_cache(obj, key)) {
+    obj@cache[[key]] <- list()
+    psi_i.hat <- psi_i.hat.gen(obj)
+    phi.i.j.hat.s <- phi.i.j.hat.s.gen(obj)
+    generator <- function(i,j) {
+      force(i)
+      force(j)
+      function(t) {
+        phi.i.j.hat.s[[i]][[j]]$call(t) - (psi_i.hat[[i]]$call(t) + psi_i.hat[[j]]$call(t)) / 2
+      }
+    }
+    for(i in seq_len(obj@n)) {
+      obj@cache[[key]][[i]] <- list()
+      for(j in seq_len(obj@n)) {
+        obj@cache[[key]][[i]][[j]] <- generator(i,j)
+      }
+    }
+  }
+  obj@cache[[key]]
+}
+
+Lambda_0.hat.assymptotic.var.gen <- function(obj) {
+  key <- "Lambda_0.hat.assymptotic.var"  
+  stopifnot(obj@n > 2)
+  if (!is_cache(obj, key)) {
+    Lambda_0.hat_Huang2010 <- Lambda_0.hat_Huang2010.gen(obj)
+    kappa_i.j <- kappa_i.j.gen(obj)
+    obj@cache[[key]] <- function(t) {
+      kappa.sum <- 0
+      for(i in seq_len(obj@n)) {
+        for(j in 1:(obj@n - 1)) {
+          if (j == i) next
+          for(k in (j+1):obj@n) {
+            kappa.sum <- kappa.sum + kappa_i.j[[min(i,j)]][[max(i,j)]](t) * kappa_i.j[[min(i,k)]][[max(i,k)]](t)
+          }
+        }
+      }
+      8 * (Lambda_0.hat_Huang2010(t)^2) * kappa.sum / (obj@n * (obj@n - 1) * (obj@n - 2))
+    }
   }
   obj@cache[[key]]
 }
