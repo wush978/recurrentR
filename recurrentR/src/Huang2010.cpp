@@ -435,3 +435,27 @@ SEXP V_hat_tilde_R_s_gen(NumericVector beta, NumericVector X_value, SEXP Rt_inde
   return retval;
   END_RCPP
 }
+
+// [[Rcpp::export]]
+SEXP phi_i_j_hat_s_gen(NumericVector Q_s, NumericVector R_s, NumericMatrix V_Q, NumericMatrix V_R) {
+  BEGIN_RCPP
+  int s_len = Q_s.size();
+  int X_dim = V_Q.ncol();
+  NumericMatrix retval(s_len, X_dim);
+  retval.fill(0);
+  std::vector<double> term_1(X_dim, 0), term_2(X_dim, 0);
+  double term_2_scalar;
+  for(int si = s_len - 1;si >= 0;si--) {
+    std::fill(term_1.begin(), term_1.end(), 0);
+    std::fill(term_2.begin(), term_2.end(), 0);
+    term_2_scalar = (Q_s[si] - (si == 0 ? 0 : Q_s[si - 1])) / pow(R_s[si], 2);
+    for(int r = 0;r < X_dim;r++) {
+      term_1[r] = V_Q(si, r) - (si == 0 ? 0 : V_Q(si - 1, r));
+      term_1[r] = term_1[r] / R_s[si];
+      term_2[r] = V_R(si, r) * term_2_scalar;
+      retval(si, r) = (si == s_len - 1 ? 0 : retval(si+1, r)) + term_1[r] - term_2[r];
+    }
+  }
+  return retval;
+  END_RCPP
+}
