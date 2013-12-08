@@ -70,3 +70,8 @@ s <- function(obj) {
 d <- function(obj) {
   as.vector(table(unlist(obj@t)))
 }
+
+#'@export
+cache_clean <- function(obj) {
+  rm(list=ls(obj@cache), envir=obj@cache)
+}
