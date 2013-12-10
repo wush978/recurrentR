@@ -544,3 +544,59 @@ Lambda_0.hat.assymptotic.var.gen <- function(obj) {
   }
   obj@cache[[key]]
 }
+
+xi.i.j.hat.R <- function(obj) {
+  key <- "xi.i.j.hat.R"
+  if (!is_cache(obj, key)) {
+    W.bar <- cbind(1, obj@W)
+    m <- m.gen(obj)
+    X.value <- X.value.gen(obj)  
+    beta.hat <- beta.hat.gen(obj)
+    Lambda_0.hat.s <- Lambda_0.hat_Huang2010.gen(obj)(obj@s)
+    dLambda_0.hat.s <- diff(c(0, Lambda_0.hat.s))
+    V2.hat <- V2.hat.gen(obj)
+    V2.hat.inv <- solve(V2.hat)
+    pRao_list <- pRao.gen(obj)
+    gamma.bar.hat <- gamma.bar.hat_Huang2010.gen(obj) 
+    kappa_i.j <- kappa_i.j.gen(obj)
+    s_index_upper <- s_index_upper.gen(obj)
+    int_y_Lambda_0 <- numeric(obj@n)
+    for(i in seq_len(obj@n)) {
+      for(si in seq_along(obj@s)) {
+        s <- obj@s[si]
+        if (s > obj@y[i]) next
+        int_y_Lambda_0[i] <- int_y_Lambda_0[i] + exp(- X.value[i,si,] %*% beta.hat) * (dLambda_0.hat.s[si])
+      }
+    }
+    
+    get_term <- function(i) {
+      force(i)
+      as.vector((m[i] / int_y_Lambda_0[i] - exp(W.bar[i,] %*% gamma.bar.hat)) * W.bar[i,] / 2)
+    }
+    s.0 <- numeric(length(obj@s))
+    retval <- list()
+    for(i in seq_len(obj@n)) {
+      retval[[i]] <- list()
+      for(j in seq_len(obj@n)) {
+        dkappa.Lambda_0 <- diff(c(0, Vectorize(kappa_i.j[[i]][[j]])(obj@s) * Lambda_0.hat.s))
+        tempk <- numeric(obj@n)
+        for(k in seq_len(obj@n)) {
+          temp2 <- exp(X.value[k,,] %*% beta.hat) * dkappa.Lambda_0
+          temp1 <- if (i == j) s.0 else (X.value[k,,] %*% V2.hat.inv %*% g_ij(pRao_list, beta.hat, min(i, j), max(i, j))) * (exp(X.value[k,,] %*% beta.hat)) * dLambda_0.hat.s
+          tempk[k] <- sum(temp1[1:s_index_upper[k]] + temp2[1:s_index_upper[k]])
+        }
+        retval[[i]][[j]] <- apply(((- m * W.bar) / int_y_Lambda_0^2) * tempk, 2, mean) + get_term(i) + get_term(j)
+      }
+    }
+    obj@cache[[key]] <- retval
+  }
+  obj@cache[[key]]
+}
+
+xi.i.j.hat.gen <- function(obj) {
+  key <- "xi.i.j.hat"
+  if (!is_cache(obj, key)) {
+        
+  }
+  obj@cache[[key]]
+}
