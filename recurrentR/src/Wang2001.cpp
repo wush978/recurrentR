@@ -30,12 +30,12 @@ struct StepFunction {
 		NumericVector retval(input.size());
     if (lower_bound) {
     	for(int j = 0;j < input.size();j++) {
-  			while(*i < input[j] & i != x.end()) { i++; }
+  			while(i != x.end() & *i < input[j]) { i++; }
   			retval[j] = y[i - x.begin()];
   		}
     } else {
   		for(int j = 0;j < input.size();j++) {
-  			while(*i <= input[j] & i != x.end()) { i++; }
+  			while(i != x.end() & *i <= input[j]) { i++; }
   			retval[j] = y[i - x.begin()];
   		}
     }
