@@ -197,15 +197,8 @@ const std::vector<Rao*> get_rao_vec(List& pRao_list) {
   return rao;
 }
 
-// [[Rcpp::export]]
-SEXP g_ij(List pRao_list, NumericVector beta, int Ri, int Rj) {
-  BEGIN_RCPP
-  if (Ri >= Rj) throw std::invalid_argument("Ri < Rj");
-  const std::vector<Rao*> rao(get_rao_vec(pRao_list));
-  NumericVector retval(rao.size());
-  retval.fill(0);
+void g_ij(const std::vector<Rao*>& rao, const int n, NumericVector& beta, const int i, const int j, double* retval) {
   double temp;
-  int n = rao[0]->size(), i = Ri - 1, j = Rj - 1;
   for(int k = 0;k < (*rao[0])[i][j].size();k++) {
     for(int l = 0;l < (*rao[0])[i][j][k].size();l++) {
       temp = 0;
@@ -218,6 +211,30 @@ SEXP g_ij(List pRao_list, NumericVector beta, int Ri, int Rj) {
       }
     }
   }
+}
+
+// [[Rcpp::export]]
+SEXP g_ij(List pRao_list, NumericVector beta, int Ri, int Rj) {
+  BEGIN_RCPP
+  if (Ri >= Rj) throw std::invalid_argument("Ri < Rj");
+  const std::vector<Rao*> rao(get_rao_vec(pRao_list));
+  NumericVector retval(rao.size());
+  retval.fill(0);
+  g_ij(rao, rao[0]->size(), beta, Ri-1, Rj-1, &retval[0]);
+//  double temp;
+//  int n = rao[0]->size(), i = Ri - 1, j = Rj - 1;
+//  for(int k = 0;k < (*rao[0])[i][j].size();k++) {
+//    for(int l = 0;l < (*rao[0])[i][j][k].size();l++) {
+//      temp = 0;
+//      for(int r = 0;r < rao.size();r++) {
+//        temp += (*rao[r])[i][j][k][l] * beta[r];
+//      }
+//      temp = exp(temp);
+//      for(int r = 0;r < rao.size();r++) {
+//        retval[r] -= (*rao[r])[i][j][k][l] * temp / (1 + temp);            
+//      }
+//    }
+//  }
   return retval;
   END_RCPP
 }
@@ -459,3 +476,97 @@ SEXP phi_i_j_hat_s_gen(NumericVector Q_s, NumericVector R_s, NumericMatrix V_Q, 
   return retval;
   END_RCPP
 }
+
+// [[Rcpp::export]]
+SEXP exp_X_beta_d_Lambda_0(NumericVector beta, NumericVector X_value, NumericVector s_index_upper, NumericVector dLambda_s) {
+  BEGIN_RCPP
+  IntegerVector dim(wrap(X_value.attr("dim")));
+  int *pdim = INTEGER(wrap(dim));
+  double *pX_value = REAL(wrap(X_value));
+  NumericVector retval(s_index_upper.size());
+  retval.fill(0);
+  double X_value_beta = 0;
+  for(int i = 0;i < pdim[0];i++) {
+    for(int si = 0; si < s_index_upper[i];si++) {
+      X_value_beta = 0;
+      for(int r = 0;r < beta.size();r++) {
+        X_value_beta += X_value_get(pX_value, pdim, i, si, r) * beta[r];
+      }
+      X_value_beta = exp(-X_value_beta);
+      retval[i] += X_value_beta * dLambda_s[si];
+    }
+  }
+  return retval;
+  END_RCPP
+}
+
+void X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0(
+  NumericVector& beta, double* pX_value, int* pdim, NumericVector& s_index_upper, 
+  NumericVector Lambda_s, NumericVector dLambda_s, NumericMatrix& V2_inv,
+  const std::vector<Rao*>& rao, const std::vector< std::vector< double* > >& kappa_i_j, int ii, int j,
+  double* retval) {
+  double X_value_beta = 0, X_value_beta_dkappa_ij_Lambda = 0, X_value_cache, X_V2_inv_g_ij_exp_Xbeta_dLambda;
+  std::vector<double> V2_inv_cache(beta.size(), 0), g_ij_cache(beta.size(), 0);
+  for(int k = 0;k < pdim[0];k++) {
+    for(int si = 0; si < s_index_upper[k];si++) {
+      X_value_beta = 0;
+      memset(&V2_inv_cache[0], 0, V2_inv_cache.size() * sizeof(double));
+      for(int r = 0;r < beta.size();r++) {
+        X_value_cache = X_value_get(pX_value, pdim, k, si, r);
+        X_value_beta += X_value_cache * beta[r];
+        if (ii != j) {
+          for(int r2 = 0;r2 < beta.size();r2++) {
+            V2_inv_cache[r2] += X_value_cache * V2_inv(r, r2);
+          }
+        }
+      }
+      memset(&g_ij_cache[0], 0, sizeof(double) * g_ij_cache.size());
+      X_V2_inv_g_ij_exp_Xbeta_dLambda = 0;
+      if (ii != j) {
+        g_ij(rao, rao[0]->size(), beta, std::min(ii, j), std::max(ii, j), &g_ij_cache[0]);
+        for(int r = 0;r < beta.size();r++) {
+          X_V2_inv_g_ij_exp_Xbeta_dLambda += V2_inv_cache[r] * g_ij_cache[r];
+        }
+      }
+      X_value_beta = exp(X_value_beta);
+      X_value_beta_dkappa_ij_Lambda = X_value_beta * (kappa_i_j[ii][j][si] * Lambda_s[si] - (si == 0 ? 0 : kappa_i_j[ii][j][si - 1] * Lambda_s[si - 1]));
+      if (ii != j) {
+        X_V2_inv_g_ij_exp_Xbeta_dLambda = X_V2_inv_g_ij_exp_Xbeta_dLambda * X_value_beta * dLambda_s[si];
+      }
+//      if (ii == 0 & j == 3) Rprintf("k: %d si:%d %.8f\n", k, si, X_V2_inv_g_ij_exp_Xbeta_dLambda);
+      retval[k] += X_V2_inv_g_ij_exp_Xbeta_dLambda + X_value_beta_dkappa_ij_Lambda;
+    }
+  }
+}
+
+//[[Rcpp::export]]
+SEXP X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0(
+  NumericVector beta, NumericVector X_value, NumericVector s_index_upper, 
+  NumericVector Lambda_s, NumericVector dLambda_s, NumericMatrix& V2_inv,
+  List pRao_list, List Rkappa_i_j_s) {
+  BEGIN_RCPP
+  IntegerVector dim(wrap(X_value.attr("dim")));
+  int *pdim = INTEGER(wrap(dim));
+  double *pX_value = REAL(wrap(X_value));
+  const std::vector<Rao*> rao(get_rao_vec(pRao_list));
+  std::vector< std::vector< double* > > kappa_i_j_s;
+  kappa_i_j_s.resize(pdim[0], std::vector< double* >(pdim[0], NULL));
+  List retval(pdim[0]);
+  for(int i = 0;i < pdim[0];i++) {
+    List temp(wrap(Rkappa_i_j_s[i]));
+    List retval_element(pdim[0]);
+    for(int j = 0;j < pdim[0];j++) {
+      kappa_i_j_s[i][j] = REAL(wrap(temp[j]));
+      NumericVector retval_element_proxy(pdim[0]);
+      retval_element_proxy.fill(0);
+      X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0(beta, pX_value, pdim, s_index_upper, 
+        Lambda_s, dLambda_s, V2_inv, rao, kappa_i_j_s, i, j, &retval_element_proxy[0]
+      );
+      retval_element[j] = retval_element_proxy;
+    }
+    retval[i] = retval_element;
+  }
+  return retval;
+  END_RCPP
+}
+

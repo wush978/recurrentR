@@ -523,6 +523,29 @@ kappa_i.j.gen <- function(obj) {
   obj@cache[[key]]
 }
 
+kappa_i.j.s.gen <- function(obj) {
+  key <- "kappa_i.j.s"
+  if (!is_cache(obj, key)) {
+    obj@cache[[key]] <- list()
+    psi_i.hat <- psi_i.hat.gen(obj)
+    psi_i.hat.s <- lapply(psi_i.hat, function(o) o$sort_call(obj@s))
+    phi.i.j.hat.s <- phi.i.j.hat.s.gen(obj)
+    generator <- function(i,j) {
+      force(i)
+      force(j)
+      phi.i.j.hat.s[[i]][[j]]$sort_call(obj@s) - (psi_i.hat.s[[i]] + psi_i.hat.s[[j]]) / 2
+    }
+    for(i in seq_len(obj@n)) {
+      obj@cache[[key]][[i]] <- list()
+      for(j in seq_len(obj@n)) {
+        obj@cache[[key]][[i]][[j]] <- generator(i,j)
+      }
+    }    
+  }
+  obj@cache[[key]]
+}
+
+
 Lambda_0.hat.assymptotic.var.gen <- function(obj) {
   key <- "Lambda_0.hat.assymptotic.var"  
   stopifnot(obj@n > 2)
@@ -557,8 +580,8 @@ xi.i.j.hat.R <- function(obj) {
     V2.hat <- V2.hat.gen(obj)
     V2.hat.inv <- solve(V2.hat)
     pRao_list <- pRao.gen(obj)
-    gamma.bar.hat <- gamma.bar.hat_Huang2010.gen(obj) 
-    kappa_i.j <- kappa_i.j.gen(obj)
+    gamma.bar.hat <- gamma.bar.hat_Huang2010.gen(obj)
+    kappa_i.j.s <- kappa_i.j.s.gen(obj)
     s_index_upper <- s_index_upper.gen(obj)
     int_y_Lambda_0 <- numeric(obj@n)
     for(i in seq_len(obj@n)) {
@@ -568,7 +591,6 @@ xi.i.j.hat.R <- function(obj) {
         int_y_Lambda_0[i] <- int_y_Lambda_0[i] + exp(- X.value[i,si,] %*% beta.hat) * (dLambda_0.hat.s[si])
       }
     }
-    
     get_term <- function(i) {
       force(i)
       as.vector((m[i] / int_y_Lambda_0[i] - exp(W.bar[i,] %*% gamma.bar.hat)) * W.bar[i,] / 2)
@@ -578,7 +600,7 @@ xi.i.j.hat.R <- function(obj) {
     for(i in seq_len(obj@n)) {
       retval[[i]] <- list()
       for(j in seq_len(obj@n)) {
-        dkappa.Lambda_0 <- diff(c(0, Vectorize(kappa_i.j[[i]][[j]])(obj@s) * Lambda_0.hat.s))
+        dkappa.Lambda_0 <- diff(c(0, kappa_i.j.s[[i]][[j]] * Lambda_0.hat.s))
         tempk <- numeric(obj@n)
         for(k in seq_len(obj@n)) {
           temp2 <- exp(X.value[k,,] %*% beta.hat) * dkappa.Lambda_0
@@ -596,7 +618,39 @@ xi.i.j.hat.R <- function(obj) {
 xi.i.j.hat.gen <- function(obj) {
   key <- "xi.i.j.hat"
   if (!is_cache(obj, key)) {
-        
+    W.bar <- cbind(1, obj@W)
+    m <- m.gen(obj)
+    X.value <- X.value.gen(obj)  
+    beta.hat <- beta.hat.gen(obj)
+    Lambda_0.hat.s <- Lambda_0.hat_Huang2010.gen(obj)(obj@s)
+    dLambda_0.hat.s <- diff(c(0, Lambda_0.hat.s))
+    V2.hat <- V2.hat.gen(obj)
+    V2.hat.inv <- solve(V2.hat)
+    pRao_list <- pRao.gen(obj)
+    gamma.bar.hat <- gamma.bar.hat_Huang2010.gen(obj) 
+    kappa_i.j.s <- kappa_i.j.s.gen(obj)
+    s_index_upper <- s_index_upper.gen(obj)
+    exp_X_beta_d_Lambda_0.n <- exp_X_beta_d_Lambda_0(beta.hat, X.value, s_index_upper, dLambda_0.hat.s)
+    X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0.n.n <- X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0(
+      beta.hat, X.value, s_index_upper, Lambda_0.hat.s, dLambda_0.hat.s, V2.hat.inv, pRao_list, kappa_i.j.s
+    )
+    get_term <- function(i) {
+      force(i)
+      as.vector((m[i] / exp_X_beta_d_Lambda_0.n[i] - exp(W.bar[i,] %*% gamma.bar.hat)) * W.bar[i,] / 2)
+    }
+    retval <- list()
+    for(i in seq_len(obj@n)) {
+      retval[[i]] <- list()
+      for(j in seq_len(obj@n)) {
+        retval[[i]][[j]] <- apply(((- m * W.bar) / exp_X_beta_d_Lambda_0.n^2) * X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0.n.n[[i]][[j]], 2, mean) + get_term(i) + get_term(j)
+      }
+    }
+    obj@cache[[key]] <- retval
   }
   obj@cache[[key]]
 }
+
+# dxi_i.j.hat.gen <- function(obj) {
+#   key <- "dxi_i.j.hat"
+#   for(!is)
+# }
