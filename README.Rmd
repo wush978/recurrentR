@@ -216,7 +216,7 @@ To calculate the asymptotic variance of $\hat{\gamma}$ and $\hat{\Lambda}_0(t)$,
 - $\hat{\bar{f}}_i(\hat{\bar{\gamma}}) = \hat{\bar{\psi}}^{-1} \hat{e}_i$
     - Let $\hat{f}_i(\hat{\gamma}) = \hat{\bar{f}}_i(\hat{\bar{\gamma}})$ without the first entry.
 
-According to [@Wang2001], the asymptotic variacne of $\hat{\gamma}$ is $\frac{1}{n} \sum_{i=1}^n{\hat{f}_i(\hat{\gamma})}$. The asymptotic variance of $\hat{\Lambda}_0(t)$ is $\frac{\hat{\Lambda}_0(t)}{n} \sum_{i=1}^n{\hat{b}_i(t)^2}$
+According to [@Wang2001], the asymptotic variacne of $\hat{\gamma}$ is $\frac{1}{n} \sum_{i=1}^n{\hat{f}_i(\hat{\gamma})}$. The asymptotic variance of $\hat{\Lambda}_0(t)$ is $\hat{Lambda}_0(t)^2 * \frac{\sum_{i}{b_i(t)^2}}{n^3}$
 
 ## [@Huang2004]
 
