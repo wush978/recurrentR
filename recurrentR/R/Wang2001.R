@@ -325,7 +325,7 @@ Wang2001 <- function(obj) {
   list(
     Lambda_0.hat = Lambda_0.hat,
     Lambda_0.hat.var = function(t) {
-      (Lambda_0.hat(t)^2 * exp(2 * gamma.bar.hat[1]) * mean((sapply(b, function(b) b(t)) + fi.seq)^2)) / obj@n
+      Lambda_0.hat(t)^2 * mean(sapply(b, function(f) f(t)^2)) / obj@n
     },
     gamma.bar.hat = gamma.bar.hat,
     gamma.bar.hat.var = psi.inv %*% var(t(ei.seq)) %*% psi.inv / obj@n
