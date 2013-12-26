@@ -8,4 +8,6 @@ autom4te.cache
 config.log
 config.status
 dev.R
+dev.cpp
 check.sh
+.gitignore
