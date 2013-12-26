@@ -654,3 +654,12 @@ xi.i.j.hat.gen <- function(obj) {
 #   key <- "dxi_i.j.hat"
 #   for(!is)
 # }
+
+#'@export
+Huang2010 <- function(obj) {
+  list(
+    beta.hat = beta.hat.gen(obj),
+    gamma.hat = gamma.bar.hat_Huang2010.gen(obj),
+    Lambda_0.hat = Lambda_0.hat_Huang2010.gen(obj)
+  )
+}

@@ -1,5 +1,7 @@
 export(Huang2004)
+export(Huang2010)
 export(Wang2001)
+export(cache_clean)
 export(create_recurrent_data)
 export(create_recurrent_data.list)
 export(create_recurrent_data.numeric)
