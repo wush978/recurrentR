@@ -16,7 +16,7 @@ library(plotrix)
 ```
 
 
-# [@Wang2001]
+# [@Huang2004]
 
 ## Parameters and Generators
 
@@ -25,7 +25,8 @@ library(plotrix)
 a <- 0.5
 b <- 0.3
 p <- 0.5
-frailty.dist = c("Pois", "Gamma")
+# frailty.dist=c('Pois','Gamma')
+frailty.dist = "Gamma"
 T_0 <- 10
 n <- 400
 lambda_0 <- local({
@@ -35,7 +36,7 @@ lambda_0 <- local({
         lambda_0(u)/Total
     }
 })
-Lambda_0 <- function(u) u/10
+Lambda_0 <- function(u) u/T_0
 lambda_y <- sqrt(200)
 k_y <- 2
 h_0 <- function(u) k_y * u^(k_y - 1)/lambda_y^k_y

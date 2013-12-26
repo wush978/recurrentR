@@ -7,7 +7,7 @@ library(RPPGen)
 library(plotrix)
 ```
 
-# [@Wang2001]
+# [@Huang2004]
 
 ## Parameters and Generators
 
@@ -15,7 +15,8 @@ library(plotrix)
 a <- 0.5
 b <- 0.3
 p <- 0.5
-frailty.dist=c("Pois","Gamma")
+# frailty.dist=c("Pois","Gamma")
+frailty.dist = "Gamma"
 T_0 <- 10
 n <- 400
 lambda_0 <- local({
@@ -32,7 +33,7 @@ h_0 <- function(u) k_y * u ^ (k_y - 1) / lambda_y ^ k_y
 H_0 <- function(t) (t / lambda_y) ^ k_y
 
   		x <- rbinom(n,1,0.5)
-Ez <- switch(frailty.dist[1], Pois=10, Gamma=2/5)
+Ez <- switch(frailty.dist[1], Pois=10, Gamma=10)
 alpha.true <- b
 gamma.true <- c(log(Ez), a)
 gen_huang_2004 <- function() {
