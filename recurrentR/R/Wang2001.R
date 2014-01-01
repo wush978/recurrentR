@@ -314,20 +314,53 @@ fi.hat.i.gen <- function(obj) {
 }
 
 #'@export
-Wang2001 <- function(obj) {
+Wang2001 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
   Lambda_0.hat <- Lambda_0.hat.gen(obj)
   gamma.bar.hat <- gamma.bar.hat.gen(obj)
-  b.hat <- b.hat.gen(obj)
-  b <- lapply(seq_len(obj@n), b.hat)
-  psi.inv <- Psi.bar.hat.inv.gen(obj)
-  ei.seq <- e.hat.i.gen(obj)
-  fi.seq <- fi.hat.i.gen(obj)
-  list(
-    Lambda_0.hat = Lambda_0.hat,
-    Lambda_0.hat.var = function(t) {
-      Lambda_0.hat(t)^2 * mean(sapply(b, function(f) f(t)^2)) / obj@n
-    },
-    gamma.bar.hat = gamma.bar.hat,
-    gamma.bar.hat.var = psi.inv %*% var(t(ei.seq)) %*% psi.inv / obj@n
-  )
+  if (methods == "none") {
+    return(list(
+      Lambda_0.hat = Lambda_0.hat,
+      gamma.bar.hat = gamma.bar.hat
+      ))
+  }
+  if (methods == "bootstrap") {
+    gamma.bar.hat.Bootstrap <- Lambda_0.hat.Bootstrap <- vector("list", B)
+    for(i in seq_len(B)) {
+      index.resampled <- sample(seq_len(obj@n), obj@n, TRUE)
+      obj.resampled <- create_recurrent_data.numeric(
+        y=obj@y[index.resampled],
+        D=obj@D[index.resampled],
+        t=obj@t[index.resampled],
+        T_0=obj@T_0,
+        W=obj@W[index.resampled,],
+        tol=obj@tol
+        )
+      temp <- Wang2001(obj.resampled, "none")
+      Lambda_0.hat.Bootstrap[[i]] <- temp$Lambda_0.hat
+      gamma.bar.hat.Bootstrap[[i]] <- temp$gamma.bar.hat
+    }
+    return(list(
+      Lambda_0.hat = Lambda_0.hat,
+      Lambda_0.hat.var = function(t) {
+        var(lapply(Lambda_0.hat.Bootstrap, function(f) f(t)))
+      },
+      gamma.bar.hat = gamma.bar.hat,
+      gamma.bar.hat.var = var(do.call(rbind, gamma.bar.hat.Bootstrap))
+      ))
+  }
+  if (methods == "asymptotic") {
+    b.hat <- b.hat.gen(obj)
+    b <- lapply(seq_len(obj@n), b.hat)
+    psi.inv <- Psi.bar.hat.inv.gen(obj)
+    ei.seq <- e.hat.i.gen(obj)
+    fi.seq <- fi.hat.i.gen(obj)
+    return(list(
+      Lambda_0.hat = Lambda_0.hat,
+      Lambda_0.hat.var = function(t) {
+        Lambda_0.hat(t)^2 * mean(sapply(b, function(f) f(t)^2)) / obj@n
+      },
+      gamma.bar.hat = gamma.bar.hat,
+      gamma.bar.hat.var = psi.inv %*% var(t(ei.seq)) %*% psi.inv / obj@n
+    ))
+  }
 }
