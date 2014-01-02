@@ -303,6 +303,21 @@ BEGIN_RCPP
     return __sexp_result;
 END_RCPP
 }
+// get_s_d
+SEXP get_s_d(List t);
+RcppExport SEXP recurrentR_get_s_d(SEXP tSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        Rcpp::traits::input_parameter< List >::type t(tSEXP );
+        SEXP __result = get_s_d(t);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
 // eval_N
 SEXP eval_N(NumericVector s, NumericVector y, IntegerVector m);
 RcppExport SEXP recurrentR_eval_N(SEXP sSEXP, SEXP ySEXP, SEXP mSEXP) {
@@ -314,21 +329,6 @@ BEGIN_RCPP
         Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP );
         Rcpp::traits::input_parameter< IntegerVector >::type m(mSEXP );
         SEXP __result = eval_N(s, y, m);
-        PROTECT(__sexp_result = Rcpp::wrap(__result));
-    }
-    UNPROTECT(1);
-    return __sexp_result;
-END_RCPP
-}
-// get_s_d
-SEXP get_s_d(List t);
-RcppExport SEXP recurrentR_get_s_d(SEXP tSEXP) {
-BEGIN_RCPP
-    SEXP __sexp_result;
-    {
-        Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< List >::type t(tSEXP );
-        SEXP __result = get_s_d(t);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

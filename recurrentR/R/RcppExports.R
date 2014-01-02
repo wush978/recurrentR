@@ -69,6 +69,10 @@ X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0 <- function(beta, X_value, s_index_upper, L
     .Call('recurrentR_X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0', PACKAGE = 'recurrentR', beta, X_value, s_index_upper, Lambda_s, dLambda_s, V2_inv, pRao_list, Rkappa_i_j_s)
 }
 
+get_s_d <- function(t) {
+    .Call('recurrentR_get_s_d', PACKAGE = 'recurrentR', t)
+}
+
 #'@title Evaluate N
 #'
 #'@param s Numeric vector, sorted
@@ -76,9 +80,5 @@ X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0 <- function(beta, X_value, s_index_upper, L
 #'@param m Integer vector, sorted by y
 eval_N <- function(s, y, m) {
     .Call('recurrentR_eval_N', PACKAGE = 'recurrentR', s, y, m)
-}
-
-get_s_d <- function(t) {
-    .Call('recurrentR_get_s_d', PACKAGE = 'recurrentR', t)
 }
 

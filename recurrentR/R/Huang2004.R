@@ -207,20 +207,79 @@ phi_i.y.gen <- function(obj, b) {
 }
 
 #'@export
-Huang2004 <- function(obj) {
+Huang2004 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
   y <- obj@y
   Lambda_0.hat <- Lambda_0.hat.gen(obj)
+  gamma.bar.hat <- gamma.bar.hat.gen(obj)
   gamma.hat <- gamma.hat.gen(obj)
   Zi <- Z.hat.gen(obj)
   Gamma.hat <- Gamma.gen(obj)
   alpha.hat <- alpha.hat.gen(obj)
   H0.hat <- H_0.hat.gen(obj)
+  if (methods[1] == "none") {
+    return(list(
+      Lambda_0.hat = Vectorize(Lambda_0.hat),
+      gamma.bar.hat = gamma.bar.hat,
+      H0.hat = Vectorize(H0.hat),
+      alpha.hat = alpha.hat      
+    ))
+  }
+  if (methods[1] == "bootstrap") {
+    Lambda_0.hat.Bootstrap <- gamma.bar.hat.Bootstrap <- 
+      H0.hat.Bootstrap <- alpha.hat.Bootstrap <- vector("list", B)
+    for(i in seq_len(B)) {
+      index.resampled <- sample(seq_len(obj@n), obj@n, TRUE)
+      obj.resampled <- create_recurrent_data.numeric(
+        y=obj@y[index.resampled],
+        D=obj@D[index.resampled],
+        t=obj@t[index.resampled],
+        T_0=obj@T_0,
+        W=obj@W[index.resampled,],
+        tol=obj@tol
+      )
+      temp <- Huang2004(obj.resampled, "none")
+      Lambda_0.hat.Bootstrap[[i]] <- temp$Lambda_0.hat
+      gamma.bar.hat.Bootstrap[[i]] <- temp$gamma.bar.hat
+      H0.hat.Bootstrap[[i]] <- temp$H0.hat
+      alpha.hat.Bootstrap[[i]] <- temp$alpha.hat
+    }
+    return(list(
+      Lambda_0.hat = Vectorize(Lambda_0.hat),
+      gamma.bar.hat = gamma.bar.hat,
+      H0.hat = Vectorize(H0.hat),
+      alpha.hat = alpha.hat,
+      Lambda_0.hat.var = Vectorize(function(t) {
+        var(sapply(Lambda_0.hat.Bootstrap, function(f) f(t)))
+      }),
+      gamma.bar.hat.var = var(do.call(rbind, gamma.bar.hat.Bootstrap)),
+      H0.hat.var = Vectorize(function(t) {
+        var(sapply(H0.hat.Bootstrap, function(f) f(t)))
+      }),
+      alpha.hat.var = var(do.call(rbind, alpha.hat.Bootstrap))
+    ))
+  }
   Sigma <- Sigma.hat.gen(obj, alpha.hat)
   Gamma <- solve(Gamma.gen(obj)(alpha.hat))
   H0.hat.y <- sapply(obj@y, H0.hat)
   phi_i.y <- phi_i.y.gen(obj, alpha.hat)
   H0.hat.y.sd <- apply(phi_i.y / obj@n, 1, sd)
   i.y <- order(y)
-  return(list(alpha.hat=alpha.hat, y = y[i.y], H0.hat.y=H0.hat.y[i.y], H0.hat.y.sd=H0.hat.y.sd[i.y], alpha.hat.var=(Gamma %*% Sigma %*% t(Gamma)) / obj@n))
-  
+  if (methods[1] == "asymptotic") {
+    b.hat <- b.hat.gen(obj)
+    b <- lapply(seq_len(obj@n), b.hat)
+    psi.inv <- Psi.bar.hat.inv.gen(obj)
+    ei.seq <- e.hat.i.gen(obj)
+    return(list(
+      Lambda_0.hat = Vectorize(Lambda_0.hat),
+      gamma.bar.hat = gamma.bar.hat,
+      H0.hat = Vectorize(H0.hat),
+      alpha.hat = alpha.hat,
+      Lambda_0.hat.var = Vectorize(function(t) {
+        Lambda_0.hat(t)^2 * mean(sapply(b, function(f) f(t)^2)) / obj@n
+      }),
+      gamma.bar.hat.var = psi.inv %*% var(t(ei.seq)) %*% psi.inv / obj@n,
+      H0.hat.y.sd = H0.hat.y.sd,
+      alpha.hat.var = (Gamma %*% Sigma %*% t(Gamma)) / obj@n
+    ))
+  }
 }
