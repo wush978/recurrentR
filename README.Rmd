@@ -1,14 +1,14 @@
-Technical Note of *recurrentR*
-========================================================
+recurrentR: non-parametric recurrent data analysis in R
+===
 
 ```{r pre, include=FALSE}
 library(knitr)
 opts_chunk$set(eval=FALSE)
 ```
 
-# Introduction
+# Brief Introduction
 
-The package *recurrentR* implements the statistical inference publushed in the following papers:
+The package *recurrentR* implements three semi-parametric model of recurrent data analysis in the following papers:
 
 - [@Wang2001]
 - [@Huang2004]

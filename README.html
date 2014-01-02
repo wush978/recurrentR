@@ -32,9 +32,9 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <h1 id="brief-introduction">Brief Introduction</h1>
 <p>The package <em>recurrentR</em> implements three semi-parametric model of recurrent data analysis in the following papers:</p>
 <ul>
-<li><span class="citation">(M-C., Qin, and Chiang 2001)</span></li>
-<li><span class="citation">(C.-Y. Huang and Wang 2004)</span></li>
-<li><span class="citation">(C.-Y. Y. Huang, Qin, and Wang 2010)</span></li>
+<li>(M-C., Qin, and Chiang 2001)</li>
+<li>(C.-Y. Huang and Wang 2004)</li>
+<li>(C.-Y. Y. Huang, Qin, and Wang 2010)</li>
 </ul>
 <p>TODO: Describe some background of non-parametric analysis of recurrent event data here.</p>
 <p>This technical note unifies the mathematical notations in these three paper and describes the implemented mathematical formulas closely.</p>
@@ -48,7 +48,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <li><span class="math">\(q\)</span>-dim vector of time independent covariates, <span class="math">\(W_i\)</span>. We assume that <span class="math">\(W_i \in \mathbb{R}^{q \times 1}\)</span>. For simplicity, we denote <span class="math">\(W \in \mathbb{R}^{q \times n}\)</span> as the corresponding matrix. TODO:</li>
 <li><span class="math">\(p\)</span>-dim time-dependent covariate process, <span class="math">\(X_i(t)\)</span>. We assme that <span class="math">\(X_i(t) \in \mathbb{R}^{p \times 1}\)</span>. TODO:</li>
 </ul>
-<p>The field <span class="math">\(X_i(t)\)</span> is required for model of <span class="citation">(C.-Y. Y. Huang, Qin, and Wang 2010)</span>. The user could omit this field for model <span class="citation">(M-C., Qin, and Chiang 2001)</span> and <span class="citation">(C.-Y. Huang and Wang 2004)</span>.</p>
+<p>The field <span class="math">\(X_i(t)\)</span> is required for model of (C.-Y. Y. Huang, Qin, and Wang 2010). The user could omit this field for model (M-C., Qin, and Chiang 2001) and (C.-Y. Huang and Wang 2004).</p>
 <p>In <em>recurrentR</em>, the data is stored in a S4-class object: <code>recurrent-data</code>. The following is the structure of <code>recurrent-data</code> with 100 instances, named <code>obj</code>:</p>
 <pre><code>Formal class &#39;recurrent-data&#39; [package &quot;recurrentR&quot;] with 6 slots
   ..@ W  : num [1:100, 1:2] 1 1 1 1 1 1 1 1 1 1 ...
@@ -73,7 +73,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 obj &lt;-<span class="st"> </span><span class="kw">create_recurrent_data</span>()
 obj</code></pre>
 <h1 id="usage">Usage</h1>
-<h2 id="section"><span class="citation">(M-C., Qin, and Chiang 2001)</span></h2>
+<h2 id="section">(M-C., Qin, and Chiang 2001)</h2>
 <p>For each instance <span class="math">\(i\)</span>, the occurrence of recurrent event follows a inhomogenous poisson process with the following intensity:</p>
 <p><span class="math">\[\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)\]</span></p>
 <p>where:</p>
@@ -89,7 +89,7 @@ obj</code></pre>
 <p>In <em>recurrentR</em>:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
 <span class="kw">Wang2001</span>(obj)</code></pre>
-<h2 id="section-1"><span class="citation">(C.-Y. Huang and Wang 2004)</span></h2>
+<h2 id="section-1">(C.-Y. Huang and Wang 2004)</h2>
 <p>The intensity is the same:</p>
 <p><span class="math">\[\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)\]</span></p>
 <p>where:</p>
@@ -111,7 +111,7 @@ obj</code></pre>
 <p>Conditional on <span class="math">\((W_i, z_i)\)</span>, <span class="math">\(N_i(.)\)</span> and <span class="math">\(y_i\)</span> are independent.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
 <span class="kw">Huang2004</span>(obj)</code></pre>
-<h2 id="section-2"><span class="citation">(C.-Y. Y. Huang, Qin, and Wang 2010)</span></h2>
+<h2 id="section-2">(C.-Y. Y. Huang, Qin, and Wang 2010)</h2>
 <p>The intensity is:</p>
 <p><span class="math">\[\lambda_i(t) = \lambda_0(t) z_i exp(X_i(t) \beta + \gamma W_i)\]</span></p>
 <p>where:</p>
@@ -129,7 +129,7 @@ obj</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
 <span class="kw">Huang2010</span>(obj)</code></pre>
 <h1 id="implementation-details">Implementation Details</h1>
-<h2 id="section-3"><span class="citation">(M-C., Qin, and Chiang 2001)</span></h2>
+<h2 id="section-3">(M-C., Qin, and Chiang 2001)</h2>
 <p>The inference are all included in the output of <code>Wang2001</code>.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
 result &lt;-<span class="st"> </span><span class="kw">Wang2001</span>(obj)</code></pre>
@@ -151,7 +151,7 @@ result$<span class="kw">Lambda.hat</span>(<span class="kw">rexp</span>(<span cla
 <li><span class="math">\(\bar{W}_i = (1, W_i)\)</span></li>
 <li><span class="math">\(\bar{\gamma} = (\mu_Z, \gamma^T)^T\)</span> and <span class="math">\(E(z_i) = \mu_Z \forall i\)</span>.</li>
 </ul>
-<p><span class="citation">(M-C., Qin, and Chiang 2001)</span> provides the best <span class="math">\(w_i\)</span> to estimate <span class="math">\(\gamma\)</span>, but it involves <span class="math">\(\gamma\)</span> which might produce potential instability. In <em>recurrentR</em>, we let <span class="math">\(w_i = 1\)</span>. If the instance has <span class="math">\(\hat{\Lambda}_0(y_i) = 0\)</span>, we will let <span class="math">\(\frac{m_i}{\hat{\Lambda}_0(y_i)} = 0\)</span> as usual convention.</p>
+<p>(M-C., Qin, and Chiang 2001) provides the best <span class="math">\(w_i\)</span> to estimate <span class="math">\(\gamma\)</span>, but it involves <span class="math">\(\gamma\)</span> which might produce potential instability. In <em>recurrentR</em>, we let <span class="math">\(w_i = 1\)</span>. If the instance has <span class="math">\(\hat{\Lambda}_0(y_i) = 0\)</span>, we will let <span class="math">\(\frac{m_i}{\hat{\Lambda}_0(y_i)} = 0\)</span> as usual convention.</p>
 <p>Let <span class="math">\[V(\bar{\gamma}) = \frac{1}{n} \sum_{i=1}^n {\bar{W}_i^T ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp(\bar{W}_i \bar{\gamma})},\]</span></p>
 <p>Then <span class="math">\[\frac{dV}{d\bar{\gamma}}(\bar{\gamma}) = \frac{-1}{n} \sum_{i=1}^n{\bar{W}_i^T \bar{W}_i exp(\bar{W}_i \bar{\gamma})}\]</span></p>
 <p>The <em>recurrentR</em> solves <span class="math">\(V(\bar{\gamma}) = 0\)</span> with the function <code>nleqslv</code> from the package <em>nleqslv</em>. The <span class="math">\(\hat{\bar{\gamma}}\)</span> could be accessed by:</p>
@@ -184,9 +184,9 @@ result$gamma.hat.var
 <li>Let <span class="math">\(\hat{f}_i(\hat{\gamma}) = \hat{\bar{f}}_i(\hat{\bar{\gamma}})\)</span> without the first entry.</li>
 </ul></li>
 </ul>
-<p>According to <span class="citation">(M-C., Qin, and Chiang 2001)</span>, the asymptotic variacne of <span class="math">\(\hat{\gamma}\)</span> is <span class="math">\(\frac{1}{n} \sum_{i=1}^n{\hat{f}_i(\hat{\gamma})}\)</span>. The asymptotic variance of <span class="math">\(\hat{\Lambda}_0(t)\)</span> is <span class="math">\(\hat{Lambda}_0(t)^2 * \frac{\sum_{i}{b_i(t)^2}}{n^3}\)</span></p>
-<h2 id="section-4"><span class="citation">(C.-Y. Huang and Wang 2004)</span></h2>
-<p>The estimator and asymptotic variance related to <span class="math">\(\Lambda_0\)</span> and <span class="math">\(\gamma\)</span> are the same as the one in <span class="citation">(M-C., Qin, and Chiang 2001)</span>. To obtain the estimator of <span class="math">\(\alpha\)</span> and <span class="math">\(H_0(t) = \int_0^t h(u) du\)</span>, we need the estimator of random effect <span class="math">\(z_i\)</span> first:</p>
+<p>According to (M-C., Qin, and Chiang 2001), the asymptotic variacne of <span class="math">\(\hat{\gamma}\)</span> is <span class="math">\(\frac{1}{n} \sum_{i=1}^n{\hat{f}_i(\hat{\gamma})}\)</span>. The asymptotic variance of <span class="math">\(\hat{\Lambda}_0(t)\)</span> is <span class="math">\(\hat{Lambda}_0(t)^2 * \frac{\sum_{i}{b_i(t)^2}}{n^3}\)</span></p>
+<h2 id="section-4">(C.-Y. Huang and Wang 2004)</h2>
+<p>The estimator and asymptotic variance related to <span class="math">\(\Lambda_0\)</span> and <span class="math">\(\gamma\)</span> are the same as the one in (M-C., Qin, and Chiang 2001). To obtain the estimator of <span class="math">\(\alpha\)</span> and <span class="math">\(H_0(t) = \int_0^t h(u) du\)</span>, we need the estimator of random effect <span class="math">\(z_i\)</span> first:</p>
 <p><span class="math">\[\hat{z}_i = \frac{m_i}{\hat{\Lambda}_0(y_i) exp(W_i \hat{\gamma)}}.\]</span></p>
 <p>Let <span class="math">\[U(\alpha) = \frac{1}{n} \sum_{i=1}^n {D_i W_i^T \frac{\sum_{j=1}^n{W_j^T \hat{z}_j exp(W_j \hat{\alpha}) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp(W_j \hat{\alpha})I(y_j \geq y_i)}} },\]</span></p>
 <p>Then <span class="math">\(\hat{\alpha}\)</span> is the one satisfies <span class="math">\(U(\hat{\alpha}) = 0\)</span>.</p>
@@ -205,7 +205,7 @@ result$alpha.hat
 <li><span class="math">\(\psi^*(\alpha) = \frac{1}{n} \sum_{i=1}^n \psi_i(\alpha)\)</span></li>
 <li><span class="math">\(\hat{\Sigma}(\alpha) = n^{-1} \sum_{i=1}^n{(\psi_i(\alpha) - \psi^*(\alpha))(\psi_i(\alpha) - \psi^*(\alpha))^T}\)</span></li>
 </ul>
-<p>According to <span class="citation">(C.-Y. Huang and Wang 2004)</span>, the estimator of asymptotic variance of <span class="math">\(\alpha\)</span> will be:</p>
+<p>According to (C.-Y. Huang and Wang 2004), the estimator of asymptotic variance of <span class="math">\(\alpha\)</span> will be:</p>
 <p><span class="math">\[\frac{1}{n} \Gamma(\hat{\alpha})^{-1} \hat{\Sigma}(\hat{\alpha}) \Gamma(\hat{\alpha})^{-1}.\]</span></p>
 <p>For the asymptotic variance of <span class="math">\(\hat{H}_0(t)\)</span>, we need</p>
 <ul>
@@ -237,7 +237,7 @@ result$alpha.hat
 <li><span class="math">\(\hat{V_1} = \frac{4}{n}\sum_{i=1}^n{ \frac{1}{\left(\begin{array}{c}n-1 \\ 2 \end{array}\right)} \sum_{i &lt; j &lt; k}{g_{i,j}(\hat{\beta}) g_{i,k}(\hat{\beta})} }\)</span></li>
 <li><span class="math">\(\hat{V_2} = \frac{-1}{\left(\begin{array}{c}n \\ 2 \end{array}\right)} \sum_{i &lt; k}{\frac{dg_{i,k}}{d\beta}(\hat{\beta})}\)</span></li>
 </ul>
-<p>Recall that in <span class="citation">(M-C., Qin, and Chiang 2001)</span>, the <span class="math">\(\hat{\Lambda}_0(t)\)</span> is based on:</p>
+<p>Recall that in (M-C., Qin, and Chiang 2001), the <span class="math">\(\hat{\Lambda}_0(t)\)</span> is based on:</p>
 <p><span class="math">\[\hat{\Lambda}_0(t) = \prod_{s_{(l)} &gt; t}(1 - \frac{d_{(l)}}{R_{(l)}})\]</span></p>
 <p>where:</p>
 <ul>
@@ -286,8 +286,8 @@ result$alpha.hat
 <p>Therefore, the estimator of asymptotic variance of <span class="math">\(\hat{\bar{\gamma}}\)</span> is:</p>
 <p><span class="math">\[TODO\]</span></p>
 <h1 id="reference">Reference</h1>
-<p>Huang, C.-Y. Y., J. Qin, and M.-C. C. Wang. 2010. “Semiparametric analysis for recurrent event data with time-dependent covariates and informative censoring.” <em>Biometrics</em> 66 (1) (mar 12): 39–49. doi:10.1111/j.1541-0420.2009.01266.x. <a href="http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x" title="http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x">http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x</a>.</p>
-<p>Huang, Chiung-Yu, and Mei-Cheng Wang. 2004. “Joint Modeling and Estimation for Recurrent Event Processes and Failure Time Data.” <em>Journal of the American Statistical Association</em> 99: 1153–1165. <a href="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165" title="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165">http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165</a>.</p>
-<p>M-C., Wang, J. Qin, and C.-T. Chiang. 2001. “Analyzing Recurrent Event Data With Informative Censoring.” <em>Journal of the American Statistical Association</em> 96: 1057–1065. <a href="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065" title="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065">http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065</a>.</p>
+<p>Huang, C.-Y. Y., J. Qin, and M.-C. C. Wang. 2010. “Semiparametric analysis for recurrent event data with time-dependent covariates and informative censoring.” <em>Biometrics</em> 66 (1) (mar 12): 39–49. doi:10.1111/j.1541-0420.2009.01266.x. <a href="http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x">http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x</a>.</p>
+<p>Huang, Chiung-Yu, and Mei-Cheng Wang. 2004. “Joint Modeling and Estimation for Recurrent Event Processes and Failure Time Data.” <em>Journal of the American Statistical Association</em> 99: 1153–1165. <a href="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165">http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165</a>.</p>
+<p>M-C., Wang, J. Qin, and C.-T. Chiang. 2001. “Analyzing Recurrent Event Data With Informative Censoring.” <em>Journal of the American Statistical Association</em> 96: 1057–1065. <a href="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065">http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065</a>.</p>
 </body>
 </html>
