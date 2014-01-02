@@ -550,7 +550,7 @@ SEXP X_V_2_inv_g_ij_exp_X_beta_d_Lambda_0(
   double *pX_value = REAL(wrap(X_value));
   const std::vector<Rao*> rao(get_rao_vec(pRao_list));
   std::vector< std::vector< double* > > kappa_i_j_s;
-  kappa_i_j_s.resize(pdim[0], std::vector< double* >(pdim[0], NULL));
+  kappa_i_j_s.resize(pdim[0], std::vector< double* >(pdim[0], (double*) NULL));
   List retval(pdim[0]);
   for(int i = 0;i < pdim[0];i++) {
     List temp(wrap(Rkappa_i_j_s[i]));
