@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<h1 id="recurrentr-non-parametric-recurrent-data-analysis-in-r">recurrentR: non-parametric recurrent data analysis in R</h1>
+<h1 id="brief-introduction">Brief Introduction</h1>
+<p>The package <em>recurrentR</em> implements three semi-parametric model of recurrent data analysis in the following papers:</p>
+<ul>
+<li><span class="citation">(M-C., Qin, and Chiang 2001)</span></li>
+<li><span class="citation">(C.-Y. Huang and Wang 2004)</span></li>
+<li><span class="citation">(C.-Y. Y. Huang, Qin, and Wang 2010)</span></li>
+</ul>
+<p>TODO: Describe some background of non-parametric analysis of recurrent event data here.</p>
+<p>This technical note unifies the mathematical notations in these three paper and describes the implemented mathematical formulas closely.</p>
+<h1 id="data">Data</h1>
+<p>Without loss of generality, we assume that there is a dataset of recurrent event data containing <span class="math">\(n\)</span> instances. Each instance, <span class="math">\(i\)</span>, includes the following fields:</p>
+<ul>
+<li>Censor time, <span class="math">\(y_i\)</span>. TODO: explanation of censor time</li>
+<li>Censor type, <span class="math">\(D_i\)</span>. TODO:</li>
+<li>Time period of observation: <span class="math">\([0, T_0]\)</span>.</li>
+<li>Recurrent event time, <span class="math">\(t_{i,1}\)</span>, <span class="math">\(t_{i,2}\)</span>, ..., <span class="math">\(t_{i,m_i}\)</span>. These are the realization of poisson process <span class="math">\(N_i(.)\)</span> TODO:</li>
+<li><span class="math">\(q\)</span>-dim vector of time independent covariates, <span class="math">\(W_i\)</span>. We assume that <span class="math">\(W_i \in \mathbb{R}^{q \times 1}\)</span>. For simplicity, we denote <span class="math">\(W \in \mathbb{R}^{q \times n}\)</span> as the corresponding matrix. TODO:</li>
+<li><span class="math">\(p\)</span>-dim time-dependent covariate process, <span class="math">\(X_i(t)\)</span>. We assme that <span class="math">\(X_i(t) \in \mathbb{R}^{p \times 1}\)</span>. TODO:</li>
+</ul>
+<p>The field <span class="math">\(X_i(t)\)</span> is required for model of <span class="citation">(C.-Y. Y. Huang, Qin, and Wang 2010)</span>. The user could omit this field for model <span class="citation">(M-C., Qin, and Chiang 2001)</span> and <span class="citation">(C.-Y. Huang and Wang 2004)</span>.</p>
+<p>In <em>recurrentR</em>, the data is stored in a S4-class object: <code>recurrent-data</code>. The following is the structure of <code>recurrent-data</code> with 100 instances, named <code>obj</code>:</p>
+<pre><code>Formal class &#39;recurrent-data&#39; [package &quot;recurrentR&quot;] with 6 slots
+  ..@ W  : num [1:100, 1:2] 1 1 1 1 1 1 1 1 1 1 ...
+  ..@ y  : num [1:100] 9.1729 8.8428 10 10 0.0597 ...
+  ..@ t  :List of 100
+  .. .. [list output truncated]
+  ..@ X  :List of 100
+  .. .. [list output truncated]
+  ..@ T_0: num 10
+  ..@ D  : logi [1:100] TRUE TRUE FALSE FALSE TRUE TRUE ...</code></pre>
+<p>The name of the slot is consistent to the variable name described above. For example, for instance 1:</p>
+<ul>
+<li>The censor time <span class="math">\(y_1\)</span> is <code>obj@y[1]</code>.</li>
+<li>The censor type <span class="math">\(D_1\)</span> is <code>obj@D[1]</code>. <code>FALSE</code> stands for informative censoring(TODO: verify!!!).</li>
+<li>The recurrent events <span class="math">\(t_{1,1}, t_{1, 2}, ..., t_{1, m_1}\)</span> is the numeric vector <code>obj@t[[1]]</code>.</li>
+<li>The <span class="math">\(T_0\)</span> is <code>obj@T_0</code></li>
+<li>The <span class="math">\(W_1\)</span> is <code>obj@W[1,]</code>. And the <span class="math">\(W \in \mathbb{R}^{q \times n}\)</span> is <code>t(obj@W)</code></li>
+<li>The <span class="math">\(X_1(t)\)</span> is the function <code>obj@X[[1]]</code></li>
+</ul>
+<p>The user could create the object with the following function:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str</span>(create_recurrent_data)
+obj &lt;-<span class="st"> </span><span class="kw">create_recurrent_data</span>()
+obj</code></pre>
+<h1 id="usage">Usage</h1>
+<h2 id="section"><span class="citation">(M-C., Qin, and Chiang 2001)</span></h2>
+<p>For each instance <span class="math">\(i\)</span>, the occurrence of recurrent event follows a inhomogenous poisson process with the following intensity:</p>
+<p><span class="math">\[\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(z_i\)</span> is a nonnegative-valued latent variable such that <span class="math">\(E(z_i | W_i) = E(z_i)\)</span>.</li>
+<li>The baseline intensity function <span class="math">\(lambda_0(t)\)</span> is a probability function:
+<ul>
+<li><span class="math">\(\lambda_0(t) \neq 0\)</span></li>
+<li><span class="math">\(\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1\)</span></li>
+</ul></li>
+<li><span class="math">\(\gamma\)</span> is a <span class="math">\(\mathbb{R}^{1 \times q}\)</span> vector.</li>
+</ul>
+<p>In <em>recurrentR</em>:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
+<span class="kw">Wang2001</span>(obj)</code></pre>
+<h2 id="section-1"><span class="citation">(C.-Y. Huang and Wang 2004)</span></h2>
+<p>The intensity is the same:</p>
+<p><span class="math">\[\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(z_i\)</span> is a nonnegative-valued latent variable such that <span class="math">\(E(z_i | W_i) = E(z_i)\)</span>.</li>
+<li>The baseline intensity function <span class="math">\(lambda_0(t)\)</span> is a probability function:
+<ul>
+<li><span class="math">\(\lambda_0(t) \neq 0\)</span></li>
+<li><span class="math">\(\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1\)</span></li>
+</ul></li>
+<li><span class="math">\(\gamma\)</span> is a <span class="math">\(\mathbb{R}^{1 \times q}\)</span> vector.</li>
+</ul>
+<p>Moreover, the hazard function of the censor time is modeled as</p>
+<p><span class="math">\[h_i(t) = h_0(t) z_i exp(W_i \alpha)\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(\alpha\)</span> is a <span class="math">\(\mathbb{R}^{1 \times q}\)</span> vector.</li>
+</ul>
+<p>Conditional on <span class="math">\((W_i, z_i)\)</span>, <span class="math">\(N_i(.)\)</span> and <span class="math">\(y_i\)</span> are independent.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
+<span class="kw">Huang2004</span>(obj)</code></pre>
+<h2 id="section-2"><span class="citation">(C.-Y. Y. Huang, Qin, and Wang 2010)</span></h2>
+<p>The intensity is:</p>
+<p><span class="math">\[\lambda_i(t) = \lambda_0(t) z_i exp(X_i(t) \beta + \gamma W_i)\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(z_i\)</span> is a nonnegative-valued latent variable such that <span class="math">\(E(z_i | W_i) = E(z_i)\)</span>.</li>
+<li>The baseline intensity function <span class="math">\(lambda_0(t)\)</span> is a probability function:
+<ul>
+<li><span class="math">\(\lambda_0(t) \neq 0\)</span></li>
+<li><span class="math">\(\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1\)</span></li>
+</ul></li>
+<li><span class="math">\(\gamma\)</span> is a <span class="math">\(\mathbb{R}^{1 \times q}\)</span> vector.</li>
+<li><span class="math">\(\beta\)</span> is a <span class="math">\(\mathbb(R)^{1 \times p}\)</span> vector.</li>
+</ul>
+<p>Conditional on <span class="math">\((W_i, z_i, X_i)\)</span>, <span class="math">\(N_i(.)\)</span> and <span class="math">\(y_i\)</span> are independent.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
+<span class="kw">Huang2010</span>(obj)</code></pre>
+<h1 id="implementation-details">Implementation Details</h1>
+<h2 id="section-3"><span class="citation">(M-C., Qin, and Chiang 2001)</span></h2>
+<p>The inference are all included in the output of <code>Wang2001</code>.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(recurrentR)
+result &lt;-<span class="st"> </span><span class="kw">Wang2001</span>(obj)</code></pre>
+<p>Recall that <span class="math">\[\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)\]</span> and <span class="math">\[\Lambda_0(t) = \int_0^t \lambda_0(u) du\]</span>. The nonparametric maximal likelihood estimator <span class="math">\(\hat{\Lambda}_0(t)\)</span> is:</p>
+<p><span class="math">\[\hat{\Lambda}_0(t) = \prod_{s_{(l)} &gt; t}(1 - \frac{d_{(l)}}{R_{(l)}})\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(s_{(l)}\)</span> is the ordered and distinct values of event times <span class="math">\({t_{ij}}\)</span>.</li>
+<li><span class="math">\(d_{(l)}\)</span> is the number of events occurred at <span class="math">\(s_{(l)}\)</span>.</li>
+<li><span class="math">\(R_{(l)}\)</span> is the total number of events <span class="math">\({t_{i,j}}\)</span> which satisfies <span class="math">\(t_{ij} \leq s_{(l)} \leq y_i\)</span>.</li>
+</ul>
+<p>The user can obtain <span class="math">\(\hat{\Lambda}_0(t)\)</span>:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str</span>(result$Lambda.hat)
+result$<span class="kw">Lambda.hat</span>(<span class="kw">rexp</span>(<span class="dv">10</span>))</code></pre>
+<p>The <span class="math">\(\hat{\gamma}\)</span> is estimated by solving the following equation:</p>
+<p><span class="math">\[\frac{1}{n} \sum_{i=1}^n w_i \bar{W}_i^T ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp(\bar{W}_i \bar{\gamma}) = 0 \in \mathbb{R}^{1 \times (q+1)},\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(\bar{W}_i = (1, W_i)\)</span></li>
+<li><span class="math">\(\bar{\gamma} = (\mu_Z, \gamma^T)^T\)</span> and <span class="math">\(E(z_i) = \mu_Z \forall i\)</span>.</li>
+</ul>
+<p><span class="citation">(M-C., Qin, and Chiang 2001)</span> provides the best <span class="math">\(w_i\)</span> to estimate <span class="math">\(\gamma\)</span>, but it involves <span class="math">\(\gamma\)</span> which might produce potential instability. In <em>recurrentR</em>, we let <span class="math">\(w_i = 1\)</span>. If the instance has <span class="math">\(\hat{\Lambda}_0(y_i) = 0\)</span>, we will let <span class="math">\(\frac{m_i}{\hat{\Lambda}_0(y_i)} = 0\)</span> as usual convention.</p>
+<p>Let <span class="math">\[V(\bar{\gamma}) = \frac{1}{n} \sum_{i=1}^n {\bar{W}_i^T ( \frac{m_i}{\hat{\Lambda}_0(y_i)} - exp(\bar{W}_i \bar{\gamma})},\]</span></p>
+<p>Then <span class="math">\[\frac{dV}{d\bar{\gamma}}(\bar{\gamma}) = \frac{-1}{n} \sum_{i=1}^n{\bar{W}_i^T \bar{W}_i exp(\bar{W}_i \bar{\gamma})}\]</span></p>
+<p>The <em>recurrentR</em> solves <span class="math">\(V(\bar{\gamma}) = 0\)</span> with the function <code>nleqslv</code> from the package <em>nleqslv</em>. The <span class="math">\(\hat{\bar{\gamma}}\)</span> could be accessed by:</p>
+<pre class="sourceCode r"><code class="sourceCode r">result$gamma.bar.hat</code></pre>
+<p>The <span class="math">\(\hat{\gamma}\)</span> is:</p>
+<pre class="sourceCode r"><code class="sourceCode r">result$gamma.hat</code></pre>
+<p><em>recurrentR</em> provides both bootstrap and asymptotic variance estimator. The user could choose one by passing the argument <code>method</code> in function <code>Huang2001</code>.</p>
+<pre class="sourceCode r"><code class="sourceCode r">result &lt;-<span class="st"> </span><span class="kw">Wang2001</span>(obj, <span class="dt">method =</span> <span class="st">&quot;asymptotic&quot;</span>)
+result &lt;-<span class="st"> </span><span class="kw">Wang2001</span>(obj, <span class="dt">method =</span> <span class="st">&quot;bootstrap&quot;</span>)
+result$gamma.bar.hat.var
+result$gamma.hat.var
+<span class="kw">str</span>(result$Lambda.hat.var)</code></pre>
+<p>The default method is (TODO)</p>
+<p>To calculate the asymptotic variance of <span class="math">\(\hat{\gamma}\)</span> and <span class="math">\(\hat{\Lambda}_0(t)\)</span>, we need the following formulas given <span class="math">\(\hat{\bar{\gamma}}\)</span> and <span class="math">\(\hat{\Lambda}_0(t)\)</span>:</p>
+<ul>
+<li><span class="math">\(\hat{Q}(u) = \frac{1}{n} \sum_{i=1}^{n} { \sum_{j=1}^{m_i} {I(t_{i,j} \leq u)} }\)</span></li>
+<li><span class="math">\(\hat{R}(u) = \frac{1}{n} \sum_{i-1}^{n} { \sum_{j=1}^{m_i} {I(t_{i,j} \leq u \leq y_i)}}\)</span></li>
+<li><span class="math">\(\hat{b}_i(t) = \sum_{j=1}^{m_i}{ \int_{t}^{T_0} {\frac{I(t_{i,j} \leq u \leq y_i) d\hat{Q}(u)}{\hat{R}(u)^2}} - \frac{I(t \leq t_{i,j})}{\hat{R}(t_{i,j})}}\)</span>
+<ul>
+<li><span class="math">\(\int_{t}^{T_0} {\frac{I(t_{i,j} \leq u \leq y_i) d\hat{Q}(u)}{\hat{R}(u)^2}} = \sum_{l} {\frac{I(t_{i,j} \leq s_{(l)} \leq y_i) d_{(l)} I(t \leq s_{(l)}) }{n \hat{R}(s_{(l)})^2}}\)</span></li>
+</ul></li>
+<li><span class="math">\(\hat{c}_i(t) = - \sum_{j=1}^n {\frac{m_j b_i(y_j)}{n \hat{\Lambda_0(y_j)}}} + \frac{m_i}{\hat{\Lambda}_0(y_i)} - \hat{\mu}_Z\)</span></li>
+<li><span class="math">\(\hat{d}_i(t) = \hat{\Lambda}_0(t) (\hat{c}_i + \hat{\mu}_Z \hat{b}_i(t) )\)</span></li>
+<li><span class="math">\(\hat{e}_i =\sum_{j=1}^n{ \frac{\bar{W}_j^T m_j b_i(y_j)}{n \hat{\Lambda_0}(y_j)}} + \bar{W}_i^T(\frac{m_i}{\hat{\Lambda}_0(y_i)} - exp(\bar{W}_i \hat{\bar{\gamma}}))\)</span>
+<ul>
+<li>Let <span class="math">\(\bar{\psi} = E[- \frac{d e_i}{d \bar{\gamma}}]\)</span>, then <span class="math">\(\hat{\bar{\psi}} = \frac{1}{n} \sum_{i=1}^n{ \bar{W}_i^T \bar{W}_i exp(\bar{W}_i \hat{\bar{\gamma}})}\)</span></li>
+</ul></li>
+<li><span class="math">\(\hat{\bar{f}}_i(\hat{\bar{\gamma}}) = \hat{\bar{\psi}}^{-1} \hat{e}_i\)</span>
+<ul>
+<li>Let <span class="math">\(\hat{f}_i(\hat{\gamma}) = \hat{\bar{f}}_i(\hat{\bar{\gamma}})\)</span> without the first entry.</li>
+</ul></li>
+</ul>
+<p>According to <span class="citation">(M-C., Qin, and Chiang 2001)</span>, the asymptotic variacne of <span class="math">\(\hat{\gamma}\)</span> is <span class="math">\(\frac{1}{n} \sum_{i=1}^n{\hat{f}_i(\hat{\gamma})}\)</span>. The asymptotic variance of <span class="math">\(\hat{\Lambda}_0(t)\)</span> is <span class="math">\(\hat{Lambda}_0(t)^2 * \frac{\sum_{i}{b_i(t)^2}}{n^3}\)</span></p>
+<h2 id="section-4"><span class="citation">(C.-Y. Huang and Wang 2004)</span></h2>
+<p>The estimator and asymptotic variance related to <span class="math">\(\Lambda_0\)</span> and <span class="math">\(\gamma\)</span> are the same as the one in <span class="citation">(M-C., Qin, and Chiang 2001)</span>. To obtain the estimator of <span class="math">\(\alpha\)</span> and <span class="math">\(H_0(t) = \int_0^t h(u) du\)</span>, we need the estimator of random effect <span class="math">\(z_i\)</span> first:</p>
+<p><span class="math">\[\hat{z}_i = \frac{m_i}{\hat{\Lambda}_0(y_i) exp(W_i \hat{\gamma)}}.\]</span></p>
+<p>Let <span class="math">\[U(\alpha) = \frac{1}{n} \sum_{i=1}^n {D_i W_i^T \frac{\sum_{j=1}^n{W_j^T \hat{z}_j exp(W_j \hat{\alpha}) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp(W_j \hat{\alpha})I(y_j \geq y_i)}} },\]</span></p>
+<p>Then <span class="math">\(\hat{\alpha}\)</span> is the one satisfies <span class="math">\(U(\hat{\alpha}) = 0\)</span>.</p>
+<p>Moreover, Let <span class="math">\[\Gamma(\alpha) = \frac{dU}{d\alpha}(\alpha) = \frac{1}{n} \sum_{i=1}^n{D_i(-\frac{\sum_{j=1}^n{W_j^2 \hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i)}}{\sum_{j=1}^n{\hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i) }} + \frac{(\sum_{j=1}^n{W_j \hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i) })^2}{(\sum_{j=1}^n{\hat{z}_j exp( W_j \alpha ) I(y_j \geq y_i)})^2})},\]</span></p>
+<p>Then we can solve <span class="math">\(\hat{\alpha}\)</span> with <code>nleqslv</code> again. Note that <span class="math">\(a^2\)</span> is the convention of <span class="math">\(a^T a\)</span> if <span class="math">\(a\)</span> is a vector.</p>
+<p>With <span class="math">\(\hat{\alpha}\)</span>, the <span class="math">\(\hat{H}_0(t)\)</span> will be:</p>
+<p><span class="math">\[\hat{H}_0(t) = \sum_{i=1}^n{D_i I(y_i \leq t) \frac{1}{\sum_{j=1}^n{\hat{z}_j exp(W_j \alpha) I(y_j \geq y_i)}}}.\]</span></p>
+<pre class="sourceCode r"><code class="sourceCode r">result &lt;-<span class="st"> </span><span class="kw">Huang2004</span>(obj)
+result$alpha.hat
+<span class="kw">str</span>(result$H0.hat)</code></pre>
+<p>To evaluate the asymptotic variance, we need:</p>
+<ul>
+<li><span class="math">\(\psi_{3i}(t, \alpha) = \frac{1}{n}\sum_{j=1}^n{\frac{m_j}{\hat{Lambda}_0(y_j)} exp(W_j(\alpha - \gamma)) I(y_j \geq t) (W_j \hat{f}_i(\alpha) + b_i(y_j))} + \frac{m_i}{\hat{Lambda}_0(y_i)} exp(W_i(\alpha - \gamma)) I(y_i \geq t) - \frac{1}{n}\sum_{j=1}^n{\hat{z}_j exp(W_j \alpha) I(y_j \geq t)}\)</span></li>
+<li><span class="math">\(\psi_{4i}(t, \alpha) = \frac{1}{n}\sum_{j=1}^n{W_j \frac{m_j}{\hat{Lambda}_0(y_j)} exp(W_j(\alpha - \gamma)) I(y_j \geq t) (W_j \hat{f}_i(\alpha) + b_i(y_j))} + W_i \frac{m_i}{\hat{Lambda}_0(y_i)} exp(W_i(\alpha - \gamma)) I(y_i \geq t) - \frac{1}{n}\sum_{j=1}^n{W_j \hat{z}_j exp(W_j \alpha) I(y_j \geq t)}\)</span></li>
+<li><span class="math">\(\psi_i(\alpha) = W_i D_i - n^{-1}\sum_{j=1}^{n}{W_j D_j} + \sum_{j=1}^n{D_j \psi_{3i}(y_j, \alpha) \frac{\sum_{k=1}^n{W_k \hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}{(\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)})^2}} - \sum_{j=1}^n{D_j \frac{\psi_{4i}(y_j, \alpha)}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}} + \frac{1}{n} \sum_{j=1}^{n}{D_j \frac{\sum_{k=1}^n{W_k \hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j)}}} - D_i \frac{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_i)}}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_i)}}\)</span></li>
+<li><span class="math">\(\psi^*(\alpha) = \frac{1}{n} \sum_{i=1}^n \psi_i(\alpha)\)</span></li>
+<li><span class="math">\(\hat{\Sigma}(\alpha) = n^{-1} \sum_{i=1}^n{(\psi_i(\alpha) - \psi^*(\alpha))(\psi_i(\alpha) - \psi^*(\alpha))^T}\)</span></li>
+</ul>
+<p>According to <span class="citation">(C.-Y. Huang and Wang 2004)</span>, the estimator of asymptotic variance of <span class="math">\(\alpha\)</span> will be:</p>
+<p><span class="math">\[\frac{1}{n} \Gamma(\hat{\alpha})^{-1} \hat{\Sigma}(\hat{\alpha}) \Gamma(\hat{\alpha})^{-1}.\]</span></p>
+<p>For the asymptotic variance of <span class="math">\(\hat{H}_0(t)\)</span>, we need</p>
+<ul>
+<li><span class="math">\(\phi_i(t) = n \sum_{j=1}^n{D_j I(y_j \leq t) \frac{\psi_{3i}(y_j, \hat{\alpha})}{(\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_j))^2}}} - \sum_{j=1}^n{D_j I(y_j \leq t) \frac{1}{\sum_{k=1}^n{ \hat{z}_k exp( W_k \alpha) I(y_k \geq y_j) }}} + D_i I(y_i \leq t) \frac{n}{\sum_{k=1}^n{\hat{z}_k exp(W_k \alpha) I(y_k \geq y_i)}} - \frac{d \hat{H}_0}{d \alpha}(t, \hat{\alpha}) \Gamma(\hat{\alpha})^{-1}\psi_i(\hat{\alpha})\)</span>
+<ul>
+<li><span class="math">\(\frac{d\hat{H}_0}{d\alpha}(t, \alpha) = -\sum_{i=1}^n{D_i I(y_i \leq t) \frac{\sum_{j=1}^n{W_j \hat{z}_j exp(W_j \alpha) I(y_j \geq y_i)}}{(\sum_{j=1}^n{\hat{z}_j exp(W_j \alpha) I(y_j \geq y_i)})^2}}\)</span></li>
+</ul></li>
+</ul>
+<p>Then the estimator of asymptotic variance of <span class="math">\(\hat{H}_0(t)\)</span> is the sample variance of <span class="math">\(\frac{1}{n} \phi_i(t)\)</span>.</p>
+<h2 id="huang2010">Huang2010</h2>
+<p>Recall that the intensity is:</p>
+<p><span class="math">\[\lambda_i(t) = z_i \lambda_0(t) exp(X_i(t) \beta + W_i \gamma)\]</span></p>
+<p>The estimator of <span class="math">\(\hat{\beta}\)</span> does not involve <span class="math">\(W_i\)</span> and <span class="math">\(\gamma\)</span>.</p>
+<p>The derivative of logged pairwise pseudolikelihood is:</p>
+<p><span class="math">\[g_{i,j}(\beta) = \sum_{k=1}^{m_i}{ \sum_{l=1}^{m_j}{ I(t_{i,k} \leq y_{i,j}) I(t_{j,l} \leq y_{i,j}) \rho_{i,j}(t_{i,k}, t_{j,l}) \frac{- exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta)}{1 + exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta)} } },\]</span></p>
+<p>where</p>
+<ul>
+<li><span class="math">\(\rho_{i,j}(u, v) = X_i(v) + X_j(u) - X_i(u) - X_j(v)\)</span></li>
+</ul>
+<p>Let <span class="math">\[S(\beta) = \frac{1}{\left(\begin{array}{c} n \\ 2 \end{array}\right)} \sum_{i &lt; j}{g_{i,j}(\beta)},\]</span></p>
+<p>Then <span class="math">\[\frac{dS}{d\beta}(\beta) = \frac{1}{\left(\begin{array}{c} n \\ 2 \end{array}\right)} \sum_{i&lt;j} {\frac{dg_{i,j}}{d\beta}(\beta)} ,\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(\frac{dg_{i,j}}{d\beta}(\beta) = \sum_{k=1}^{m_i}{ \sum_{l=1}^{m_j}{ I(t_{i,k} \leq y_{i,j}) I(t_{j,l} \leq y_{i,j}) \frac{- \rho_{i,j}(t_{i,k}, t_{j,l})^2 exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta)}{(1 + exp(\rho_{i,j}(t_{i,k}, t_{j,l}) \beta))^2}  } }\)</span></li>
+</ul>
+<p>The <span class="math">\(\hat{\beta}\)</span> is the one satisfies <span class="math">\(S(\beta) = 0\)</span>.</p>
+<p>To obtain the asymptotic variance, we need:</p>
+<ul>
+<li><span class="math">\(\hat{V_1} = \frac{4}{n}\sum_{i=1}^n{ \frac{1}{\left(\begin{array}{c}n-1 \\ 2 \end{array}\right)} \sum_{i &lt; j &lt; k}{g_{i,j}(\hat{\beta}) g_{i,k}(\hat{\beta})} }\)</span></li>
+<li><span class="math">\(\hat{V_2} = \frac{-1}{\left(\begin{array}{c}n \\ 2 \end{array}\right)} \sum_{i &lt; k}{\frac{dg_{i,k}}{d\beta}(\hat{\beta})}\)</span></li>
+</ul>
+<p>Recall that in <span class="citation">(M-C., Qin, and Chiang 2001)</span>, the <span class="math">\(\hat{\Lambda}_0(t)\)</span> is based on:</p>
+<p><span class="math">\[\hat{\Lambda}_0(t) = \prod_{s_{(l)} &gt; t}(1 - \frac{d_{(l)}}{R_{(l)}})\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(s_{(l)}\)</span> is the ordered and distinct values of event times <span class="math">\({t_{ij}}\)</span>.</li>
+<li><span class="math">\(d_{(l)}\)</span> is the number of events occurred at <span class="math">\(s_{(l)}\)</span>.</li>
+<li><span class="math">\(R_{(l)}\)</span> is the total number of events <span class="math">\({t_{i,j}}\)</span> which satisfies <span class="math">\(t_{ij} \leq s_{(l)} \leq y_i\)</span>.</li>
+</ul>
+<p>To correct the effect of time-dependent covariates <span class="math">\(X(t)\)</span> and <span class="math">\(\beta\)</span>, we let</p>
+<p><span class="math">\[\hat{\Lambda}_0(t, \beta) = \prod_{s_{(l)} &gt; t}(1 - \frac{d_{(l)}(\beta)}{R_{(l)}(\beta)}),\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(s_{(l)}\)</span> is the ordered and distinct values of event times <span class="math">\({t_{ij}}\)</span>.</li>
+<li><span class="math">\(d_{(l)}(\beta) = \frac{1}{n} \sum_{i=1}^n { \sum_{j=1}^{m_i} { I(t_{i,j} == s_{(l)}) exp(-X_i(t_{i,j]} \beta)) } }\)</span></li>
+<li><span class="math">\(R_{(l)}(\beta) = \frac{1}{n} \sum_{i=1}^n { \sum_{j=1}^{m_i} { I(t_{i,j} \leq s_{(l)} \leq y_i) exp( -X_i(t_{i,j}) \beta ) } }\)</span></li>
+</ul>
+<p>Note that <span class="math">\(d_{(l)}(0) = d_{(l)}\)</span> and <span class="math">\(R_{(l)}(0) = R_{(l)}\)</span>.</p>
+<p>The asymptotic variance of <span class="math">\(\hat{\Lambda}_0(t, \beta)\)</span> will be</p>
+<p><span class="math">\[4 \Lambda_0(t)^2 E\left[\kappa_{1,2} (t, \beta) \kappa_{1, 3}( t, \beta)\right].\]</span></p>
+<p>The estimator of <span class="math">\(\hat{\gamma}\)</span> is the root of the following equation:</p>
+<p><span class="math">\[\frac{1}{n} \sum_{i=1}^n{\bar{W}_i \left[\frac{m_i}{\sum_{s_{(l)} \leq y_i}{exp(X_i(s_{(l)}) \hat{\beta})(\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})})} - exp(\bar{W}_i \bar{\gamma})\right]},\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math">\(\bar{W}_i = (1, W_i)\)</span></li>
+<li><span class="math">\(\bar{\gamma} = (\mu_Z, \gamma^T)\)</span></li>
+</ul>
+<p>The asymptotic variance of <span class="math">\(\hat{\gamma}\)</span> will be:</p>
+<p><span class="math">\[E(\frac{d\xi}{d\gamma})^{-1} \Sigma E(\frac{d\xi}{d\gamma})^{-1}\]</span>.</p>
+<p>To obtain the definition of <span class="math">\(\kappa\)</span>, we need:</p>
+<ul>
+<li><span class="math">\(\hat{Q}(u) = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { I(t_{i,j} \leq u) exp(- X_i(t_{i,j}) \hat{\beta}) } }\)</span></li>
+<li><span class="math">\(\hat{R}(u) = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { I(t_{i,j} \leq u \leq y_i) exp(- X_i(t_{i,j}) \hat{\beta}) } }\)</span></li>
+<li><span class="math">\(\hat{V}_{\tilde{Q}}(u) = E \frac{dQ}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u) exp(- X_i(t_{i,j}) \hat{\beta}) } }\)</span></li>
+<li><span class="math">\(\hat{V}_{\tilde{R}}(u) = E \frac{dR}{d\beta} = \frac{1}{n} \sum_{i=1}^n{ \sum_{j=1}^{m_i} { - X_i(t_{i,j}) I(t_{i,j} \leq u \leq y_i) exp(- X_i(t_{i,j}) \hat{\beta}) } }\)</span></li>
+<li><span class="math">\(\hat{\phi}_{i,j}(t) = \left(\int_t^{T_0} { \frac{d\hat{V}_{\tilde{Q}}(u)}{\hat{R}(u)} - \frac{\hat{V}_{\tilde{R}}(u) d\hat{Q}(u)}{\hat{R}(u)^2} }\right)\hat{V}_2^{-1} g_{i,j}(\hat{\beta}) = \left(\sum_{t \leq s_{(l)}}{\frac{\hat{V}_{\tilde{Q}}(s_{(l)}) - \hat{V}_{\tilde{Q}}(s_{(l-1)})}{\hat{R}(s_{(l)})}} - \sum_{t \leq s_{(l)}}{\frac{\hat{V}_{\tilde{R}}(s_{(l)})(\hat{Q}(s_{(l)}) - \hat{Q}(s_{(l-1)}))}{\hat{R}(s_{(l)})^2}} \right)\hat{V}_2^{-1} g_{i,j}(\hat{\beta})\)</span></li>
+<li><span class="math">\(\hat{\psi}_i(t) = \sum_{j=1}^{m_i}{I( t &lt; t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \int_t^{T_0} {I(t_{i,j} \leq u \leq y_i) exp(X_i(t_{i,j}) \hat{\beta}) \frac{d \hat{Q}(u)}{\hat{R}(u)^2} } = \sum_{j=1}^{m_i}{I( t &lt; t_{i,j}) \frac{1}{\hat{R}(t_{i,j})}} - \left( \sum_{s_{(l)} &gt; t} { I(t_{i,j} \leq s_{(l)} \leq y_i) exp(-X_i(t_{i,j}) \hat{\beta}) \frac{(\hat{Q}(s_{(l)}) - \hat{Q}(s_{(l-1)}))}{\hat{R}(s_{(l)})^2} } \right)\)</span></li>
+</ul>
+<p>Then</p>
+<p><span class="math">\[\hat{\kappa}_{i,j}(t) = \hat{\phi}_{i,j}(t) + \frac{\hat{\psi}_i(t) + \hat{\psi}_j(t)}{2}\]</span></p>
+<p>The estimator of asymptotic variance of <span class="math">\(\hat{\Lambda}_0(t)\)</span> will be</p>
+<p><span class="math">\[4 \hat{\Lambda_0}(t)^2 \left(\frac{2}{n(n-1)(n-2)} \sum_{i=1}^n{ \sum_{j \neq i, k \neq i, j &lt; k}{ \hat{\kappa}_{i,j}(t)\hat{\kappa}_{i,k}(t) } }\right)\]</span></p>
+<p>The asymptotic variance of <span class="math">\(\hat{\gamma}\)</span> involves:</p>
+<ul>
+<li><span class="math">\(\hat{\xi}_{i,j} = \frac{1}{n} \sum_{k=1}^n{ \frac{- \bar{W}_k m_k}{\left[\sum_{s_{(l)} \leq y_k} { exp(X_k(s_{(l)}) \hat{\beta}) (\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) }\right]^2} \left[\sum_{s_{(l)} \leq y_k} { X_k(s_{(l)}) \hat{V}_2^{-1} g_{i,j}(\hat{\beta}) exp(X_k(s_{(l)}) \hat{\beta}) ( \hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) + exp(X_k(s_{(l)}) \hat{\beta}) (\hat{\kappa}_{i,j}(s_{(l)}) \hat{\Lambda}_0(s_{(l)}) - \hat{\kappa}_{i,j}(s_{(l-1)}) \hat{\Lambda}_0(s_{(l-1)})) } \right]  } + \frac{1}{2} \bar{W}_i \left[ \frac{m_i}{\sum_{s_{(l)} \leq y_i} { exp(X_i(s_{(l)}) \hat{\beta}) (\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) }} - exp(\bar{W}_i \hat{\bar{\gamma}}) \right] + \frac{1}{2} \bar{W}_j \left[ \frac{m_j}{\sum_{s_{(l)} \leq y_j} { exp(X_j(s_{(l)}) \hat{\beta}) (\hat{\Lambda}_0(s_{(l)}) - \hat{\Lambda}_0(s_{(l-1)})) }} - exp(\bar{W}_j \hat{\bar{\gamma}}) \right]\)</span></li>
+<li><span class="math">\(- \frac{d\xi_{i,j}}{d\gamma} = \frac{1}{2} \bar{W}_i^2 exp(\bar{W}_i \hat{\bar{\gamma}}) + \frac{1}{2} \bar{W}_j^2 exp(\bar{W}_j \hat{\bar{\gamma}})\)</span></li>
+</ul>
+<p>Therefore, the estimator of asymptotic variance of <span class="math">\(\hat{\bar{\gamma}}\)</span> is:</p>
+<p><span class="math">\[TODO\]</span></p>
+<h1 id="reference">Reference</h1>
+<p>Huang, C.-Y. Y., J. Qin, and M.-C. C. Wang. 2010. “Semiparametric analysis for recurrent event data with time-dependent covariates and informative censoring.” <em>Biometrics</em> 66 (1) (mar 12): 39–49. doi:10.1111/j.1541-0420.2009.01266.x. <a href="http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x" title="http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x">http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x</a>.</p>
+<p>Huang, Chiung-Yu, and Mei-Cheng Wang. 2004. “Joint Modeling and Estimation for Recurrent Event Processes and Failure Time Data.” <em>Journal of the American Statistical Association</em> 99: 1153–1165. <a href="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165" title="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165">http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165</a>.</p>
+<p>M-C., Wang, J. Qin, and C.-T. Chiang. 2001. “Analyzing Recurrent Event Data With Informative Censoring.” <em>Journal of the American Statistical Association</em> 96: 1057–1065. <a href="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065" title="http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065">http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065</a>.</p>
+</body>
+</html>
