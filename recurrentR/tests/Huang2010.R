@@ -31,4 +31,4 @@ N <- local({
   m <- sapply(obj@t, length)
   N + recurrentR:::eval_N(s, obj@y[y.i], m[y.i])
 })
-stopifnot(R_beta == N)
+# stopifnot(R_beta == N)
