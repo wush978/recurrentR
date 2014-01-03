@@ -332,7 +332,7 @@ Wang2001 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 10
         D=obj@D[index.resampled],
         t=obj@t[index.resampled],
         T_0=obj@T_0,
-        W=obj@W[index.resampled,],
+        W=obj@W[index.resampled, , drop = FALSE],
         tol=obj@tol
         )
       temp <- Wang2001(obj.resampled, "none")
