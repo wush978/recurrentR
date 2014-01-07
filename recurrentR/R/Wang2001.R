@@ -194,6 +194,11 @@ y_k_vs_s.gen <- function(obj) {
   obj@cache[["y_k_vs_s"]]
 }
 
+#'b.hat.y
+#'
+#'@param obj recurrent-data object.
+#'
+#'@return Numeric matrix. Element (i,j) is b.hat[[i]](obj@y[j])
 b.hat.y.gen <- function(obj) {
   if (!exists("b.hat.y", envir=obj@cache, inherits=FALSE)) {
     s <- obj@s
