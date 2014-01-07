@@ -16,7 +16,7 @@ obj <- try(create_recurrent_data.numeric(y, D, t, T_0, matrix(x, ncol = 2)), sil
 stopifnot(class(obj) == "try-error")
 
 obj <- create_recurrent_data(y, D, t, T_0, matrix(x, ncol = 1))
-X <- lapply(1:n, function(t) x * t)
+X <- lapply(1:n, function(x) function(t) x * t)
 obj <- create_recurrent_data(X, y, D, t, T_0, matrix(x, ncol = 1))
 X <- X[1:(n-1)]
 obj <- try(create_recurrent_data(X, y, D, t, T_0, matrix(x, ncol = 1)), silent=TRUE)
