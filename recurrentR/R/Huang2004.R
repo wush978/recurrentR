@@ -91,6 +91,7 @@ psi_3i.y.gen <- function(obj, b) {
     m.F.hat.y.inv <- m * Lambda_0.hat.y.inv
     indicator.T <- indicator.T.gen(obj)
     term1.2 <- obj@W %*% fi.seq + bi.y
+#     browser()
     exp.X.b.gamma.hat <- exp(as.vector(obj@W %*% (b - gamma.hat)))
     term2 <- term1.1 <- t(m.F.hat.y.inv * exp.X.b.gamma.hat * indicator.T)
     term1 <- term1.1 %*% term1.2 / n
@@ -278,7 +279,8 @@ Huang2004 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 1
         Lambda_0.hat(t)^2 * mean(sapply(b, function(f) f(t)^2)) / obj@n
       }),
       gamma.bar.hat.var = psi.inv %*% var(t(ei.seq)) %*% psi.inv / obj@n,
-      H0.hat.y.sd = H0.hat.y.sd,
+      y = obj@y[i.y],
+      H0.hat.y.sd = H0.hat.y.sd[i.y],
       alpha.hat.var = (Gamma %*% Sigma %*% t(Gamma)) / obj@n
     ))
   }
