@@ -1,3 +1,15 @@
+#'@title S4 Object of Recurrent Data
+#'@param y numeric vector. \code{y[i]} is the failure or censored time of instance \code{i}.
+#'@param D logical vector. \code{D[i]} indicates whether the 
+#'corresponding \code{y[i]} is failure time(\code{TRUE}) or not.
+#'@param T_0 positive numeric value. The time period of observations is \eqn{[0, T_0]}.
+#'@param t list of numeric vector. The \code{t[[i]]} is the recurrent event time, \eqn{t_{i,1}$, $t_{i,2}$, 
+#'..., $t_{i,m_i}} of instance \code{i}. There are several statistical model describes the behavior of 
+#'recurrent event time. Please see \link{Wang2001}, \link{Huang2004} and \link{Huang2010} for details.
+#'@param W numeric matrix. \code{W[i,]} is the time independent covariates of the instance \code{i}.
+#'@param X list of functions. \code{X[[i]](t)} is the time dependent covariate process of instance \code{i}. 
+#'This slot is only used in \link{Huang2010}.
+#'@author Wush Wu
 #'@exportClass "recurrent-data"
 setClass(
   "recurrent-data",

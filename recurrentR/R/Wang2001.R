@@ -333,8 +333,10 @@ fi.hat.i.gen <- function(obj) {
 #'  \item \eqn{\lambda_0(t) \neq 0}
 #'  \item \eqn{\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1}
 #'  \item \eqn{\gamma} is a \eqn{R^{1 \times q}} vector.
+#'  \item Condition on \eqn{W_i, z_i}, \eqn{N_i(.)} and \eqn{y_i} are independent.
 #'  }
 #'}
+#'@author Wush Wu
 #'@references M-C., Wang, J. Qin, and C.-T. Chiang. 2001. “Analyzing 
 #'Recurrent Event Data With Informative Censoring.” 
 #'Journal of the American Statistical Association 96: 1057–1065. 

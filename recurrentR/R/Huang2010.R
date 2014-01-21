@@ -655,6 +655,27 @@ xi.i.j.hat.gen <- function(obj) {
 #   for(!is)
 # }
 
+#'@title Semiparametric Analysis of Recurrent Event Data and Time-Dependent
+#'Covariates and Information Censoring
+#'@param obj A \code{recurrent-data} object.
+#'@param methods One of \code{c("none", "bootstrap", "asymptotic")}. The method of evaluating standard deviation.
+#'@param B An \code{integer} value. The size of bootstrap.
+#'@details This is an implementation of non-parametric estimator of the cumulative rate
+#'function based on [Huang et. al. 2010]. The recurrent event time, \eqn{t_{i,1}}
+#', \eqn{t_{i,2}}, ..., \eqn{t_{i,m_i}}, are the realization of a poisson process 
+#'\eqn{N_i(.)} whose itensity is modeled as \deqn{\lambda_i(t) = \lambda_0(t) z_i e^(W_i \gamma + X_i(t) \beta)},
+#'where:
+#'\enumerate{
+#'\item \eqn{z_i} is a nonnegative-valued latent variable such that \eqn{E(z_i | W_i) = E(z_i)}.
+#'\item The baseline intensity function \eqn{\lambda_0(t)} is a probability function: \enumerate{
+#'  \item \eqn{\lambda_0(t) \neq 0}
+#'  \item \eqn{\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1}
+#'  \item \eqn{\gamma} is a \eqn{R^{1 \times q}} vector.
+#'  \item \eqn{\beta} is a \eqn{R^{1 \times p}} vector.
+#'  \item Condition on \eqn{W_i, z_i, X_i}, \eqn{N_i(.)} and \eqn{y_i} are independent.
+#'  }
+#'}
+#'@references Huang, C.-Y. Y., J. Qin, and M.-C. C. Wang. 2010. “Semiparametric analysis for recurrent event data with time-dependent covariates and informative censoring.” Biometrics 66 (1) (mar 12): 39–49. doi:10.1111/j.1541-0420.2009.01266.x. http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x.
 #'@export
 Huang2010 <- function(obj) {
   list(

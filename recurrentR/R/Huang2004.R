@@ -207,6 +207,35 @@ phi_i.y.gen <- function(obj, b) {
   obj@cache[[key]]
 }
 
+#'@title Joint Model of Recurrent Event Process and Failure Time Data
+#'@param obj A \code{recurrent-data} object.
+#'@param methods One of \code{c("none", "bootstrap", "asymptotic")}. The method of evaluating standard deviation.
+#'@param B An \code{integer} value. The size of bootstrap.
+#'@return A \code{list} of: \enumerate{
+#'\item \code{Lambda_0.hat}: The estimated cumulative rate function. Note that 
+#'the function is normalized such that \code{Lambda_0.hat(T_0)} is 1.
+#'\item \code{gamma.bar.hat}: The estimated regression parameter \eqn{\gamma}.
+#'\item \code{H0.hat}: The estimated hazard function of the failure time.
+#'\item \code{alpha.hat}: The estimated regression parameter \eqn{\alpha}.
+#'}
+#'@details This is an implementation of non-parametric estimator of the cumulative rate
+#'function based on [Huang and Wang 2004]. The recurrent event time, \eqn{t_{i,1}}
+#', \eqn{t_{i,2}}, ..., \eqn{t_{i,m_i}}, are the realization of a poisson process 
+#'\eqn{N_i(.)} whose itensity is modeled as \deqn{\lambda_i(t) = \lambda_0(t) z_i e^(W_i \gamma)},
+#'and the hazard function of failure time \eqn{h(t)} is modeled as 
+#'\deqn{h_i(t) = h_0(t) z_i e^{W_i \alpha}},
+#'where:
+#'\enumerate{
+#'\item \eqn{z_i} is a nonnegative-valued latent variable such that \eqn{E(z_i | W_i) = E(z_i)}.
+#'\item The baseline intensity function \eqn{\lambda_0(t)} is a probability function: \enumerate{
+#'  \item \eqn{\lambda_0(t) \neq 0}
+#'  \item \eqn{\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1}
+#'  \item \eqn{\gamma} is a \eqn{R^{1 \times q}} vector.
+#'  \item \eqn{\alpha} is a \eqn{R^{1 \times q}} vector.
+#'  \item Condition on \eqn{W_i, z_i}, \eqn{N_i(.)} and \eqn{y_i} are independent.
+#'  }
+#'}
+#'@references Huang, Chiung-Yu, and Mei-Cheng Wang. 2004. “Joint Modeling and Estimation for Recurrent Event Processes and Failure Time Data.” Journal of the American Statistical Association 99: 1153–1165. http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165.
 #'@export
 Huang2004 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
   y <- obj@y
