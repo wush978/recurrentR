@@ -73,11 +73,6 @@ get_s_d <- function(t) {
     .Call('recurrentR_get_s_d', PACKAGE = 'recurrentR', t)
 }
 
-#'@title Evaluate N
-#'
-#'@param s Numeric vector, sorted
-#'@param y Numeric vector, sorted
-#'@param m Integer vector, sorted by y
 eval_N <- function(s, y, m) {
     .Call('recurrentR_eval_N', PACKAGE = 'recurrentR', s, y, m)
 }

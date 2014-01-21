@@ -1,16 +1,3 @@
-#'@title Integration on step function
-#'
-#'@param g Function, the integrand
-#'@param f Step function, the integrator
-#'@param a Numeric value
-#'@param b Numeric value
-#'
-#'@description 
-#'Evaluate \deqn{\int_a^b {g(x) df(x)}} where \eqn{f} is a step function
-#'
-#'@return Numeric value
-#'
-#'@export
 step_integrate <- function(g, f, a, b) {
   stopifnot("stepfun" %in% class(f))
   e <- environment(f)
@@ -22,7 +9,6 @@ step_integrate <- function(g, f, a, b) {
   sum(g(x[index]) * p[index])
 }
 
-#'@export
 step_integrate.StepFunction <- function(g, f, a, b) {
   x <- f$x
   # 	index <- which(x >= a & x <= b)

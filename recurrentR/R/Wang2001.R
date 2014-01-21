@@ -194,11 +194,6 @@ y_k_vs_s.gen <- function(obj) {
   obj@cache[["y_k_vs_s"]]
 }
 
-#'b.hat.y
-#'
-#'@param obj recurrent-data object.
-#'
-#'@return Numeric matrix. Element (i,j) is b.hat[[i]](obj@y[j])
 b.hat.y.gen <- function(obj) {
   if (!exists("b.hat.y", envir=obj@cache, inherits=FALSE)) {
     s <- obj@s
@@ -318,6 +313,32 @@ fi.hat.i.gen <- function(obj) {
   obj@cache[["fi.hat.i"]]
 }
 
+#'@title Semi-parametric Estimator of the Cumulative Rate Function
+#'@param obj A \code{recurrent-data} object.
+#'@param methods One of \code{c("none", "bootstrap", "asymptotic")}. The method of evaluating standard deviation.
+#'@param B An \code{integer} value. The size of bootstrap.
+#'@return A \code{list} of: \enumerate{
+#'\item \code{Lambda_0.hat}: The estimated cumulative rate function. Note that 
+#'the function is normalized such that \code{\Lambda_0.hat(T_0)} is 1.
+#'\item \code{gamma.bar.hat}: The estimated regression parameter \eqn{\gamma}.
+#'}
+#'@details This is an implementation of non-parametric estimator of the cumulative rate
+#'function based on [Wang et. al. 2001]. The recurrent event time, \eqn{t_{i,1}}
+#', \eqn{t_{i,2}}, ..., \eqn{t_{i,m_i}}, are the realization of a poisson process 
+#'\eqn{N_i(.)} whose itensity is moded as \deqn{\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)},
+#'where:
+#'\enumerate{
+#'\item \eqn{z_i} is a nonnegative-valued latent variable such that \eqn{E(z_i | W_i) = E(z_i)}.
+#'\item The baseline intensity function \eqn{\lambda_0(t)} is a probability function: \enumerate{
+#'  \item \eqn{\lambda_0(t) \neq 0}
+#'  \item \eqn{\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1}
+#'  \item \eqn{\gamma} is a \eqn{R^{1 \times q}} vector.
+#'  }
+#'}
+#'@references M-C., Wang, J. Qin, and C.-T. Chiang. 2001. “Analyzing 
+#'Recurrent Event Data With Informative Censoring.” 
+#'Journal of the American Statistical Association 96: 1057–1065. 
+#'http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065.
 #'@export
 Wang2001 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
   Lambda_0.hat <- Lambda_0.hat.gen(obj)

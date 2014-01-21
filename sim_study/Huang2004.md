@@ -43,7 +43,7 @@ h_0 <- function(u) k_y * u^(k_y - 1)/lambda_y^k_y
 H_0 <- function(t) (t/lambda_y)^k_y
 
 x <- rbinom(n, 1, 0.5)
-Ez <- switch(frailty.dist[1], Pois = 10, Gamma = 2/5)
+Ez <- switch(frailty.dist[1], Pois = 10, Gamma = 10)
 alpha.true <- b
 gamma.true <- c(log(Ez), a)
 gen_huang_2004 <- function() {
@@ -67,61 +67,23 @@ gen_huang_2004 <- function() {
 ```
 
 
-## Asymptotic Variance
-
-
-```r
-obj <- gen_huang_2004()
-wang_2001 <- Wang2001(obj)
-huang_2004 <- Huang2004(obj = obj)
-curve(Lambda_0, 0, 10, col = 2, ylim = c(0, 1.2))
-Lambda_0.hat <- function(x) wang_2001$Lambda_0.hat(x)
-curve(Lambda_0.hat, add = TRUE, 0, 10, col = 1)
-Lambda_0.hat.upper <- Vectorize(function(x) wang_2001$Lambda_0.hat(x) + 2 * 
-    sqrt(wang_2001$Lambda_0.hat.var(x)))
-curve(Lambda_0.hat.upper, add = TRUE, col = 1, 0, 10, lty = 2)
-Lambda_0.hat.lower <- Vectorize(function(x) wang_2001$Lambda_0.hat(x) - 2 * 
-    sqrt(wang_2001$Lambda_0.hat.var(x)))
-curve(Lambda_0.hat.lower, add = TRUE, col = 1, 0, 10, lty = 2)
-```
-
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-31.png) 
-
-```r
-
-curve(H_0, 0, T_0, col = 2, ylim = c(0, H_0(T_0) * 1.1))
-lines(huang_2004$y, huang_2004$H0.hat.y)
-lines(huang_2004$y, huang_2004$H0.hat.y + qnorm(0.975) * huang_2004$H0.hat.y.sd, 
-    lty = 2)
-lines(huang_2004$y, huang_2004$H0.hat.y - qnorm(0.975) * huang_2004$H0.hat.y.sd, 
-    lty = 2)
-```
-
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-32.png) 
-
-```r
-
-plotCI(1:3, c(wang_2001$gamma.bar.hat, huang_2004$alpha.hat), uiw = qnorm(0.975) * 
-    c(sqrt(diag(wang_2001$gamma.bar.hat.var)), sqrt(diag(huang_2004$alpha.hat.var))))
-points(1:3, c(gamma.true, alpha.true), col = 2)
-```
-
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-33.png) 
-
-
 ## Parametric Bootstrap
 
 
 ```r
-B <- 20
+B <- 100
 gamma.hat <- matrix(NA, B, 2)
 x.eval <- seq(from = 0, to = T_0, length.out = 100)
 Lambda_0.hat <- matrix(NA, B, length(x.eval))
+H_0.hat <- matrix(NA, B, length(x.eval))
+alpha.hat <- numeric(B)
 if (interactive()) pb <- txtProgressBar(max = B, style = 3)
 for (i in seq_len(B)) {
-    temp <- Wang2001(obj = gen_huang_2004())
+    temp <- Huang2004(obj = gen_huang_2004())
     gamma.hat[i, ] <- temp$gamma.bar.hat
     Lambda_0.hat[i, ] <- temp$Lambda_0.hat(x.eval)
+    H_0.hat[i, ] <- temp$H0.hat(x.eval)
+    alpha.hat[i] <- temp$alpha.hat
     gc()
     if (interactive()) 
         setTxtProgressBar(pb, i)
@@ -135,13 +97,119 @@ lines(x.eval, y.eval + qnorm(0.975) * y.eval.sd, lty = 2)
 lines(x.eval, y.eval - qnorm(0.975) * y.eval.sd, lty = 2)
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-41.png) 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-31.png) 
 
 ```r
 plotCI(1:2, apply(gamma.hat, 2, mean), uiw = apply(gamma.hat, 2, sd), main = "Parametric Bootstrap", 
-    xlab = "", ylab = "", xaxt = "n")
+    xlab = "", ylab = "gamma.bar.hat", xaxt = "n")
 points(1:2, gamma.true, col = 2)
 ```
 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-32.png) 
+
+```r
+curve(H_0, 0, 10, col = 2)
+h.eval <- apply(H_0.hat, 2, mean)
+h.eval.sd <- apply(H_0.hat, 2, sd)
+lines(x.eval, h.eval)
+lines(x.eval, h.eval + qnorm(0.975) * h.eval.sd, lty = 2)
+lines(x.eval, h.eval - qnorm(0.975) * h.eval.sd, lty = 2)
+```
+
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-33.png) 
+
+```r
+plotCI(1, mean(alpha.hat), uiw = sd(alpha.hat), main = "Parametric Bootstrap", 
+    ylab = "alpha.hat", xlab = "n", xaxt = "n")
+points(1, alpha.true, col = 2)
+```
+
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-34.png) 
+
+
+## Bootstrap and Asymptotic Variance
+
+
+```r
+obj <- gen_huang_2004()
+huang_2004 <- Huang2004(obj = obj, methods = "bootstrap")
+huang_2004.a <- Huang2004(obj = obj, methods = "asymptotic")
+curve(Lambda_0, 0, 10, col = 2, ylim = c(0, 1.2))
+Lambda_0.hat <- function(x) huang_2004$Lambda_0.hat(x)
+curve(Lambda_0.hat, add = TRUE, 0, 10, col = 1)
+Lambda_0.hat.upper <- Vectorize(function(x) huang_2004$Lambda_0.hat(x) + 2 * 
+    sqrt(huang_2004$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.upper, add = TRUE, col = 3, 0, 10, lty = 2)
+Lambda_0.hat.lower <- Vectorize(function(x) huang_2004$Lambda_0.hat(x) - 2 * 
+    sqrt(huang_2004$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.lower, add = TRUE, col = 3, 0, 10, lty = 2)
+Lambda_0.hat.upper.a <- Vectorize(function(x) huang_2004.a$Lambda_0.hat(x) + 
+    2 * sqrt(huang_2004.a$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.upper.a, add = TRUE, col = 4, 0, 10, lty = 3)
+Lambda_0.hat.lower.a <- Vectorize(function(x) huang_2004.a$Lambda_0.hat(x) - 
+    2 * sqrt(huang_2004.a$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.lower.a, add = TRUE, col = 4, 0, 10, lty = 3)
+lines(x.eval, y.eval + qnorm(0.975) * y.eval.sd, lty = 4, col = 5)
+lines(x.eval, y.eval - qnorm(0.975) * y.eval.sd, lty = 4, col = 5)
+legend("topleft", c("real survival", "estimated survival", "bootstrap C.I.", 
+    "asymptotic C.I.", "parametric bootstrap C.I."), lty = c(1, 1, 2, 3, 4), 
+    col = c(2, 1, 3, 4, 5))
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-41.png) 
+
+```r
+
+plotCI(1:2 + 0.1, huang_2004.a$gamma.bar.hat, uiw = qnorm(0.975) * sqrt(diag(huang_2004.a$gamma.bar.hat.var)), 
+    col = 4, main = "Estimation of gamma", xlab = "", ylab = "", xaxt = "n", 
+    xlim = c(1, 2.1), )
+plotCI(1:2, apply(gamma.hat, 2, mean), uiw = apply(gamma.hat, 2, sd), add = TRUE)
+plotCI(1:2 + 0.05, huang_2004$gamma.bar.hat, uiw = qnorm(0.975) * sqrt(diag(huang_2004$gamma.bar.hat.var)), 
+    xlim = c(1, 2.1), col = 3, add = TRUE)
+points(1:2, gamma.true, col = 2)
+legend("bottomleft", c("real gamma", "parametric bootstrap", "bootstrap", "asymptotic"), 
+    pch = 1, lty = c(0, 1, 1, 1), col = c(2, 1, 3, 4))
+```
+
 ![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-42.png) 
+
+```r
+
+curve(H_0, 0, T_0, col = 2, ylim = c(0, H_0(T_0) * 1.1))
+H_0.hat <- function(x) huang_2004$H0.hat(x)
+curve(H_0.hat, 0, T_0, col = 1, add = TRUE)
+H_0.hat.upper <- function(x) huang_2004$H0.hat(x) + qnorm(0.975) * sqrt(huang_2004$H0.hat.var(x))
+curve(H_0.hat.upper, 0, T_0, col = 3, lty = 2, add = TRUE)
+H_0.hat.lower <- function(x) huang_2004$H0.hat(x) - qnorm(0.975) * sqrt(huang_2004$H0.hat.var(x))
+curve(H_0.hat.lower, 0, T_0, col = 3, lty = 2, add = TRUE)
+lines(huang_2004.a$y, H_0.hat(huang_2004.a$y) + qnorm(0.975) * huang_2004.a$H0.hat.y.sd, 
+    col = 4, lty = 3)
+lines(huang_2004.a$y, H_0.hat(huang_2004.a$y) - qnorm(0.975) * huang_2004.a$H0.hat.y.sd, 
+    col = 4, lty = 3)
+lines(x.eval, h.eval + qnorm(0.975) * h.eval.sd, lty = 4, col = 5)
+lines(x.eval, h.eval - qnorm(0.975) * h.eval.sd, lty = 4, col = 5)
+legend("topleft", c("real survival", "estimated survival", "bootstrap C.I.", 
+    "asymptotic C.I.", "parametric bootstrap C.I."), lty = c(1, 1, 2, 3, 4), 
+    col = c(2, 1, 3, 4, 5))
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-43.png) 
+
+```r
+
+plotCI(1 + 0.1, col = 4, huang_2004.a$alpha.hat, uiw = qnorm(0.975) * sqrt(diag(huang_2004.a$alpha.hat.var)), 
+    main = "Parametric Bootstrap", ylab = "alpha.hat", xlab = "n", xaxt = "n")
+plotCI(1 + 0.05, col = 3, huang_2004$alpha.hat, uiw = qnorm(0.975) * sqrt(diag(huang_2004$alpha.hat.var)), 
+    add = TRUE)
+plotCI(1, mean(alpha.hat), uiw = sd(alpha.hat), add = TRUE)
+points(1, alpha.true, col = 2)
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-44.png) 
+
+```r
+# legend('bottomleft', c('real gamma', 'parametric bootstrap', 'bootstrap',
+# 'asymptotic'), pch = 1, lty = c(0, 1, 1, 1), col = c(2, 1, 3, 4))
+```
+
 

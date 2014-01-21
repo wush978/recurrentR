@@ -83,11 +83,6 @@ RcppExport SEXP StepFunction_sort_call(SEXP Robj, SEXP Rx) {
 using namespace Rcpp;
 
 
-//'@title Evaluate N
-//'
-//'@param s Numeric vector, sorted
-//'@param y Numeric vector, sorted
-//'@param m Integer vector, sorted by y
 //[[Rcpp::export]]
 SEXP eval_N(NumericVector s, NumericVector y, IntegerVector m) {
   BEGIN_RCPP
