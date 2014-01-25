@@ -318,9 +318,11 @@ fi.hat.i.gen <- function(obj) {
 #'@param methods One of \code{c("none", "bootstrap", "asymptotic")}. The method of evaluating standard deviation.
 #'@param B An \code{integer} value. The size of bootstrap.
 #'@return A \code{list} of: \enumerate{
-#'\item \code{Lambda_0.hat}: The estimated cumulative rate function. Note that 
+#'\item \code{Lambda_0.hat}: Function. The estimated cumulative rate function. Note that 
 #'the function is normalized such that \code{\Lambda_0.hat(T_0)} is 1.
-#'\item \code{gamma.bar.hat}: The estimated regression parameter \eqn{\gamma}.
+#'\item \code{gamma.bar.hat}: Numeric Vector. The estimated regression parameter \eqn{\gamma}.
+#'\item \code{Lambda_0.hat.var}: Function. The variance of \code{Lambda_0.hat}.
+#'\item \code{gamma.bar.hat.var}: Numeric Matrix. The estimated variance of \code{gamma.bar.hat}.
 #'}
 #'@details This is an implementation of non-parametric estimator of the cumulative rate
 #'function based on [Wang et. al. 2001]. The recurrent event time, \eqn{t_{i,1}}
@@ -341,6 +343,20 @@ fi.hat.i.gen <- function(obj) {
 #'Recurrent Event Data With Informative Censoring.” 
 #'Journal of the American Statistical Association 96: 1057–1065. 
 #'http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065.
+#'@examples 
+#'\dontrun {
+#'library(survrec)
+#'data(MMC)
+#'obj <- create_recurrent_data.data.frame(
+#'  MMC, id = "id", time = "time", time_type = "relatively",
+#'  indicator = "event", indicator_value = list("recurrent" = 1, "censor" = 0),
+#'  covariate = "group"
+#')
+#'wang_2001 <- Wang2001(obj)
+#'# Plot estimated Lambda_0.hat
+#'Lambda_0.hat <- wang_2001$Lambda_0.hat
+#'curve(Lambda_0.hat, 0, obj@T_0)
+#'}
 #'@export
 Wang2001 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
   Lambda_0.hat <- Lambda_0.hat.gen(obj)
