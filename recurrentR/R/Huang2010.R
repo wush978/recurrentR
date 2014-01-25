@@ -677,10 +677,14 @@ xi.i.j.hat.gen <- function(obj) {
 #'}
 #'@references Huang, C.-Y. Y., J. Qin, and M.-C. C. Wang. 2010. “Semiparametric analysis for recurrent event data with time-dependent covariates and informative censoring.” Biometrics 66 (1) (mar 12): 39–49. doi:10.1111/j.1541-0420.2009.01266.x. http://dx.doi.org/10.1111/j.1541-0420.2009.01266.x.
 #'@export
-Huang2010 <- function(obj) {
-  list(
-    beta.hat = beta.hat.gen(obj),
-    gamma.hat = gamma.bar.hat_Huang2010.gen(obj),
-    Lambda_0.hat = Lambda_0.hat_Huang2010.gen(obj)
-  )
+Huang2010 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
+  if (methods[1] == "none") {
+    list(
+      beta.hat = beta.hat.gen(obj),
+      gamma.hat = gamma.bar.hat_Huang2010.gen(obj),
+      Lambda_0.hat = Lambda_0.hat_Huang2010.gen(obj)
+    )
+  }
+  if (methods[1] == "bootstrap") notsupported()
+  if (methods[1] == "asymptotic") notsupported()
 }
