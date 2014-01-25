@@ -355,7 +355,7 @@ fi.hat.i.gen <- function(obj) {
 #'wang_2001 <- Wang2001(obj)
 #'# Plot estimated Lambda_0.hat
 #'Lambda_0.hat <- wang_2001$Lambda_0.hat
-#'curve(Lambda_0.hat, 0, obj@T_0)
+#'curve(Lambda_0.hat, 0, obj@@T_0)
 #'}
 #'@export
 Wang2001 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {

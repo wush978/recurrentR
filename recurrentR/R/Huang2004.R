@@ -250,11 +250,11 @@ phi_i.y.gen <- function(obj, b) {
 #'
 #'# Plot the cumulative rate function
 #'Lambda_0.hat <- huang_2004$Lambda_0.hat
-#'curve(Lambda_0.hat, 0, obj@T_0)
+#'curve(Lambda_0.hat, 0, obj@@T_0)
 #'
 #'# Plot the cumulative hazard function
 #'H0.hat <- huang_2004$H0.hat
-#'curve(H0.hat, 0, obj@T_0)
+#'curve(H0.hat, 0, obj@@T_0)
 #'
 #'}
 Huang2004 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
