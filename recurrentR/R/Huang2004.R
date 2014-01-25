@@ -237,6 +237,26 @@ phi_i.y.gen <- function(obj, b) {
 #'}
 #'@references Huang, Chiung-Yu, and Mei-Cheng Wang. 2004. “Joint Modeling and Estimation for Recurrent Event Processes and Failure Time Data.” Journal of the American Statistical Association 99: 1153–1165. http://EconPapers.repec.org/RePEc:bes:jnlasa:v:99:y:2004:p:1153-1165.
 #'@export
+#'@examples
+#'\dontrun{
+#'library(survrec)
+#'data(MMC)
+#'obj <- create_recurrent_data.data.frame(
+#'  MMC, id = "id", time = "time", time_type = "relatively",
+#'  indicator = "event", indicator_value = list("recurrent" = 1, "censor" = 0),
+#'  covariate = "group"
+#')
+#'huang_2004 <- Huang2004(obj)
+#'
+#'# Plot the cumulative rate function
+#'Lambda_0.hat <- huang_2004$Lambda_0.hat
+#'curve(Lambda_0.hat, 0, obj@T_0)
+#'
+#'# Plot the cumulative hazard function
+#'H0.hat <- huang_2004$H0.hat
+#'curve(H0.hat, 0, obj@T_0)
+#'
+#'}
 Huang2004 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 100) {
   y <- obj@y
   Lambda_0.hat <- Lambda_0.hat.gen(obj)
