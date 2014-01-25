@@ -1,11 +1,12 @@
 #'@title Transformate Data to the \code{recurrent-data} Object
 #'@param src data.frame. This is the raw data frame.
 #'@param id character value. The column name in \code{src} for \emph{id}.
-#'@param time character value.
-#'@param time_type character value.
-#'@param indicator character value.
-#'@param indicator_value list of named value.
-#'@param covariate character value.
+#'@param time character value. The column name of event time.
+#'@param time_type character value. The type of event.
+#'@param indicator character value. The column name of the event indicator.
+#'@param indicator_value list of named value. \code{list("recurrent" = a, "censor" = b)}. Indicates
+#'corresponding value in \code{time_type}.
+#'@param covariate character value. The covariate of the instances.
 #'@return S4 Object of \code{recurrent-data}
 #'@export
 #'@examples
