@@ -8,3 +8,9 @@ all: README.html
 
 clean:
 	rm README.html
+
+build:
+	-rm -rf /tmp/recurrentR
+	git clone . /tmp/recurrentR
+	cd /tmp/recurrentR/recurrentR && Rscript -e "library(Rcpp);compileAttributes('.')" && Rscript -e "library(roxygen2);roxygenize('.', roclets=c('rd', 'namespace'))" && R CMD build .
+
