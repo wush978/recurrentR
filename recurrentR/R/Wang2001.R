@@ -344,7 +344,7 @@ fi.hat.i.gen <- function(obj) {
 #'Journal of the American Statistical Association 96: 1057–1065. 
 #'http://EconPapers.repec.org/RePEc:bes:jnlasa:v:96:y:2001:m:september:p:1057-1065.
 #'@examples 
-#'\dontrun {
+#'\dontrun{
 #'library(survrec)
 #'data(MMC)
 #'obj <- create_recurrent_data.data.frame(
