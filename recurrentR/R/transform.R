@@ -1,10 +1,11 @@
 #'@title Transformate Data to the \code{recurrent-data} Object
+#'@aliases create_recurrent_data
 #'@param src data.frame. This is the raw data frame.
 #'@param id character value. The column name in \code{src} for \emph{id}.
 #'@param time character value. The column name of event time.
 #'@param time_type character value. The type of event.
 #'@param indicator character value. The column name of the event indicator.
-#'@param indicator_value list of named value. \code{list("recurrent" = a, "censor" = b)}. Indicates
+#'@param indicator_value list of named value. \code{list("recurrence" = a, "censoring" = b, "failure" = c)}. Indicates
 #'corresponding value in \code{time_type}.
 #'@param covariate character value. The covariate of the instances.
 #'@return S4 Object of \code{recurrent-data}
@@ -15,7 +16,7 @@
 #'data(MMC)
 #'obj <- create_recurrent_data.data.frame(
 #'  MMC, id = "id", time = "time", time_type = "relatively",
-#'  indicator = "event", indicator_value = list("recurrent" = 1, "censor" = 0),
+#'  indicator = "event", indicator_value = list("recurrence" = 1, "censoring" = 0, "failure" = -1),
 #'  covariate = "group"
 #')
 #'}
@@ -25,8 +26,8 @@ create_recurrent_data.data.frame <- function(src, id, time, time_type = c("absol
   id.index <- split(seq_len(nrow(src)), src[[spec$id]])
   id.group <- lapply(id.index, function(i) src[i,])
   y <- as.vector(sapply(USE.NAMES=FALSE, id.group, function(df) {
-    stopifnot(df[-nrow(df),spec$indicator] == spec$indicator_value$recurrent)
-    stopifnot(df[nrow(df),spec$indicator] == spec$indicator_value$censor)
+    stopifnot(df[-nrow(df),spec$indicator] == spec$indicator_value$recurrence)
+    stopifnot(df[nrow(df),spec$indicator] %in% c(spec$indicator_value$censoring, spec$indicator_value$failure))
     switch(
       spec$time_type,
       "absolutely" = {
@@ -42,7 +43,9 @@ create_recurrent_data.data.frame <- function(src, id, time, time_type = c("absol
     )
   }))
   T_0 <- if(is.null(spec$T_0)) max(y) else spec$T_0
-  D <- y < T_0
+  D <- as.vector(sapply(USE.NAMES = FALSE, id.group, function(df) {
+    df[nrow(df), spec$indicator] == spec$indicator_value$failure
+  }))
   t <- lapply(id.group, function(df) {
     switch(
       spec$time_type,
