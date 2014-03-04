@@ -1,13 +1,12 @@
 Package: recurrentR
 Type: Package
-Title: What the package does (short line)
+Title: Semi-parametric recurrent data analysis.
 Version: 0.1
 Date: 2013-11-12
 Author: Wush Wu
 Maintainer: Wush Wu <wush978@gmail.com>
-Description: More about what it does (maybe more than one line)
+Description: This package provides a fast implementation of semi-parametric recurrent data analysis which studies the relationship between recurrent process and the failure rate. 
 License: GPL(>= 3)
-Depends: Rcpp (>= 0.10.4)
-Imports: methods, nleqslv
+Depends: Rcpp (>= 0.10.4), methods, nleqslv
 LinkingTo: Rcpp
 RcppModules: StepFunction
