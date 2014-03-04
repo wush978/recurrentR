@@ -26,7 +26,7 @@ create_recurrent_data.data.frame <- function(src, id, time, time_type = c("absol
   id.index <- split(seq_len(nrow(src)), src[[spec$id]])
   id.group <- lapply(id.index, function(i) src[i,])
   y <- as.vector(sapply(USE.NAMES=FALSE, id.group, function(df) {
-    stopifnot(df[-nrow(df),spec$indicator] == spec$indicator_value$recurrence)
+    stopifnot(sapply(id.group, function(df) all(df[-nrow(df), spec$indicator] %in% spec$indicator_value$recurrence)))
     stopifnot(df[nrow(df),spec$indicator] %in% c(spec$indicator_value$censoring, spec$indicator_value$failure))
     switch(
       spec$time_type,
@@ -44,7 +44,7 @@ create_recurrent_data.data.frame <- function(src, id, time, time_type = c("absol
   }))
   T_0 <- if(is.null(spec$T_0)) max(y) else spec$T_0
   D <- as.vector(sapply(USE.NAMES = FALSE, id.group, function(df) {
-    df[nrow(df), spec$indicator] == spec$indicator_value$failure
+    isTRUE(df[nrow(df), spec$indicator] == spec$indicator_value$failure)
   }))
   t <- lapply(id.group, function(df) {
     switch(
@@ -57,8 +57,10 @@ create_recurrent_data.data.frame <- function(src, id, time, time_type = c("absol
       }
     )
   })
+  formula <- as.formula(paste("~", paste(covariate, collapse="+")))
   W <- do.call(rbind, lapply(id.group, function(df) {
-    df[1,spec$covariate]
+    r <- model.matrix(formula, df)
+    r[1,-1, drop=FALSE]
   }))
   create_recurrent_data.numeric(y, D, t, T_0, W)
 }
