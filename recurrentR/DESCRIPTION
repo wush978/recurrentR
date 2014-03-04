@@ -5,7 +5,7 @@ Version: 0.1
 Date: 2013-11-12
 Author: Wush Wu
 Maintainer: Wush Wu <wush978@gmail.com>
-Description: This package provides a fast implementation of semi-parametric recurrent data analysis which studies the relationship between recurrent process and the failure rate. 
+Description: This package provides a fast implementation of semi-parametric recurrent data analysis which studies how to estimate the recurrence process and survival function without assuming the independence between them.
 License: GPL(>= 3)
 Depends: Rcpp (>= 0.10.4), methods, nleqslv
 LinkingTo: Rcpp
