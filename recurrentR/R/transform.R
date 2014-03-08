@@ -8,6 +8,7 @@
 #'@param indicator_value list of named value. \code{list("recurrence" = a, "censoring" = b, "failure" = c)}. Indicates
 #'corresponding value in \code{time_type}.
 #'@param covariate character value. The covariate of the instances.
+#'@param T_0 numeric value. The upper bound of the research interest.
 #'@return S4 Object of \code{recurrent-data}
 #'@export
 #'@examples
@@ -21,8 +22,10 @@
 #')
 #'}
 create_recurrent_data.data.frame <- function(src, id, time, time_type = c("absolutely", "relatively"),
-                                             indicator, indicator_value, covariate) {
-  spec <- list(id = id, time = time, time_type = time_type, indicator = indicator, indicator_value = indicator_value, covariate = covariate)
+                                             indicator, indicator_value, covariate, T_0 = NULL) {
+  spec <- list(id = id, time = time, time_type = time_type, 
+               indicator = indicator, indicator_value = indicator_value, 
+               covariate = covariate, T_0 = T_0)
   id.index <- split(seq_len(nrow(src)), src[[spec$id]])
   id.group <- lapply(id.index, function(i) src[i,])
   y <- as.vector(sapply(USE.NAMES=FALSE, id.group, function(df) {
