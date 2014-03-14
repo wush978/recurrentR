@@ -32,6 +32,12 @@ setClass(
     stopifnot(length(object@T_0) == 1)
     stopifnot(length(object@y) == length(object@D))
     stopifnot(length(object@y) == nrow(object@W))
+    lapply(seq_along(object@y), function(i) {
+      if (length(object@t[[i]]) > 0) {
+        stopifnot(all(object@t[[i]] <= object@y[i]))
+        stopifnot(object@y[i] <= object@T_0)
+      }
+    })
     if (length(object@X) > 0) {
       stopifnot(length(object@y) == length(object@X))
       temp <- lapply(object@X, function(f) f(0))
@@ -54,6 +60,14 @@ create_recurrent_data.numeric <- function(y, D, t, T_0, W, tol = 1e-4) {
   retval@D <- D
   retval@t <- t
   retval@T_0 <- T_0
+  # correct data
+  for(i in seq_along(retval@y)) {
+    if (retval@y[i] > retval@T_0) {
+      retval@y[i] <- retval@T_0
+      retval@D[i] <- FALSE
+      retval@t[[i]] <- retval@t[[i]][which(retval@t[[i]] <= retval@T_0)]
+    }
+  }
   retval@W <- W
   retval@n <- length(y)
   retval@X_dim <- 0L
