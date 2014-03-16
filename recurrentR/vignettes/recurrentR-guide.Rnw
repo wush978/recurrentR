@@ -1,0 +1,337 @@
+%\VignetteIndexEntry{recurrentR-guide}
+
+\documentclass[article,shortnames,nojss]{./recurrentR-include/jss}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% declarations for jss.cls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% almost as usual
+\author{
+\begin{minipage}{6in}
+\centering
+Wush Wu$^{1,2}$
+\end{minipage}
+\\
+\\
+$^1$National Taiwan University, \\
+Taipei, Taiwan \\
+\\
+$^2$Taiwan R User Group,\\
+Taipei, Taiwan \\
+}
+\title{A Quick Guide for the \pkg{recurrentR} Package}
+
+%% for pretty printing and a nice hypersummary also set:
+\Plainauthor{Wush Wu} %% comma-separated
+\Plaintitle{Quick Guide for recurrentR} %% without formatting
+\Shorttitle{Quick Guide for recurrentR} %% a short title (if necessary)
+
+\Address{
+  Wush Wu\\
+  E-mail: \email{wush978@gmail.com}\\
+}
+
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\definecolor{mygreen}{RGB}{0,150,0}
+
+\newtheorem{notation}{Notation}
+
+\usepackage{listings}
+%\lstset{numbers=left,numberstyle=\footnotesize\ttfamily,
+\lstset{numbers=none,numberstyle=\footnotesize\ttfamily,
+        frame=single,frameround=tttt,language=R,
+        showspaces=false,showstringspaces=false,
+        breaklines=true,breakatwhitespace=true,
+        basicstyle=\small\ttfamily}
+%\lstset{literate={<-}{{$\leftarrow$}}1}
+\makeatletter
+\let\Code\@undefined
+\let\CodeInput\@undefined
+\let\CodeOutput\@undefined
+\makeatother
+\lstnewenvironment{Command}[1][title=Shell Command]{\lstset{#1}}{}
+\lstnewenvironment{Code}[1][title=R Script]{\lstset{#1}}{}
+\lstnewenvironment{CodeOutput}[1][title=R Output]{\lstset{#1}}{}
+\lstnewenvironment{Error}[1][]{
+  \lstset{title=Error Message,basicstyle=\small\ttfamily}\color{Red}}{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+library(knitr)
+opts_chunk$set(tidy=TRUE, tidy.opts=list(keep.blank.line=FALSE, width.cutoff=40))
+@
+
+\pagenumbering{roman}
+\tableofcontents
+
+\newpage
+
+\null
+\vfill
+\copyright\ Wush Wu
+
+Permission is granted to make and distribute verbatim copies of
+this vignette and its source provided the copyright notice and
+this permission notice are preserved on all copies.
+
+This publication was typeset using \LaTeX.
+
+\newpage
+
+\section*{Acknowledgement}
+\addcontentsline{toc}{section}{Acknowledgement \vspace{-0.3cm}}
+
+I want to thank Chiung-Yu Huang for supporting this work. I also thank Hsiang Yu for testing the package.
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+
+\section[Introduction]{Introduction}
+\label{sec:introduction}
+\addcontentsline{toc}{section}{\thesection. Introduction}
+
+The package \pkg{recurrentR} is encouraged by Chiung-Yu Huang since May, 2013. We want to provide a fast implementation of \cite{Wang2001,Huang2004,Huang2010} to the researchers who are interesting in semi-parametric recurrent data analysis. They studied how to estimate the recurrence process and survival function without assuming the independence between the recurrent process and the failure rate.
+
+\section[Installation]{Installation}
+\label{sec:installation}
+\addcontentsline{toc}{section}{\thesection. Installation}
+
+The \pkg{recurrentR} depends on the \pkg{Rcpp} and the \pkg{nleqslv}. Please install them before the installation of \pkg{recurrentR}.
+
+One can install \pkg{recurrentR} from github at
+\url{https://github.com/wush978/recurrentR}, and
+the intallation can be done with the following commands
+<<install-github, eval=FALSE>>=
+library(devtools)
+install_github(repo='recurrentR', username='wush978', subdir='recurrentR')
+@
+
+\section[Data Import]{Data Import}
+\label{sec:data_import}
+\addcontentsline{toc}{section}{\thesection. Data Import}
+
+In the \pkg{recurrentR}, the imported dataset is stored in a S4 object `recurrent-data`. Without loss of generality, we assume that there is a dataset of recurrent event data containing $n$ instances. Each instance, $i$, must include the following information.
+
+\begin{notation}[Notation] \label{notation}
+The following data are required in the \pkg{recurrentR}:
+\begin{enumerate}
+  \item Failure or censored time, $y_i$. The failure time is the termination of the recurrent process of instance $i$ (failure time). The censored time is the termination of the observation.
+  \item Indicator, $D_i$. $D_i$ indicates whether the $y_i$ is failure time or not. 
+  \item The time period of the research interest: $[0, T_0]$.
+  \item Time of the recurrent events, $t_{i,1}$, $t_{i,2}$, ..., $t_{i,m_i}$. These are the realization of poisson process $N_i(.)$ whose cumulative intensity function $\Lambda_i(.)$ is estimated by the \pkg{recurrentR}.
+  \item $q$-dim vector of time independent covariates, $W_i$. We assume that $W_i \in \mathbb{R}^{q \times 1}$. For simplicity, we denote $W \in \mathbb{R}^{q \times n}$ as the corresponding matrix for all instances.
+  \item $p$-dim time-dependent covariate process, $X_i(t)$. We assme that $X_i(t) \in \mathbb{R}^{p \times 1}$. This quantity is only used in \cite{Huang2010}.
+\end{enumerate}
+\end{notation}
+
+The \pkg{recurrentR} provides a S3 method `create\_recurrent\_data` to directly construct the `recurrent-data` object.
+
+\subsection{Dataset MMC in the \pkg{survrec}}
+\addcontentsline{toc}{subsection}{Dataset MMC in the \pkg{survrec}}
+
+Here is the `MMC` data from \pkg{survrec}. Since the MMC puts all event times into a single data.frame, we take the instance with `id == 1` as an example (Table.~\ref{tb:MMC}). 
+
+<<MMC-demo, echo=FALSE, results='asis'>>=
+suppressPackageStartupMessages({
+  library(recurrentR)
+  library(survrec)
+  library(xtable)
+  library(dplyr)
+})
+data(MMC)
+print(xtable(filter(MMC, id == 1), caption="This is the head 20 rows of the Migratory Motor Complex data from \\pkg{survrec}.", label="tb:MMC"))
+@
+
+
+\begin{enumerate}
+  \item The `id` indicates the row is corresponding to which instance. Here we list all rows with `id` 1.
+  \item The `time` indicates the recurrence or censoring time. This is the difference between each recurrence or censoring.
+  \item The `event` indicates the time is recurrence or censoring.
+  \item The `group` is the covariates of the instance.
+\end{enumerate}
+
+The numeric vector \Sexpr{MMC$time[MMC$id == 1]} is the difference of recurrence and censoring, so its `cumsum`, which is \Sexpr{cumsum(MMC$time[MMC$id == 1])}, is the recurrence and censoring time(the last one). Similarly, we could extract all recurrence and censoring time for all instance and put them seperately into a `list` of `numeric vector` and a `numeric vector`. Note that there is no failure time in `MMC` dataset.
+
+The API `create\_recurrent\_data` provides an helper function to quickly construct the `recurrent-data` for you:
+
+<<create_recurrent_data>>=
+str(recurrentR:::create_recurrent_data.data.frame)
+@
+
+\begin{enumerate}
+  \item The parameter `src` is the input data.frame.
+  \item The parameter `id` is the column name of `src` to specify the instance. Here, the `id` should be `"id"`.
+  \item The parameter `time` is the column name of `src` to specify the even time. Here, the `time` should be `"time"`.
+  \item The parameter `time\_type` is the type of the value recorded in `time`. If the value is `"absolutely"`, then the `time` is direct realization of the recurrent process. If the value is `"relatively"`, the time is the length between two continuous events. Here, the `time\_type` should be `"relatively"`.
+  \item The parameter `indicator` is the column name of `src` to specify the event type. In the \pkg{recurrentR}, there are three types of events: "recurrence", "censoring" and "failure". The "recurrence" represents the sample from the recurrent process. The "censoring" represents the termination time of the observation where the failure has not been occurred. The "failure" represents the failure time of the instance. Here, the `indicator` should be `"event"`.
+  \item The paramter `indicator\_value` is a named list indicate the meaning of the value in the `src[[indicator]]`. Here, the `indicator\_value` should be `list("recurrence" = 1, "censoring" = 0)`.
+  \item The parameter `covariate` is the column names of `src` to indicate the covariates. They should be the time independent covariate.
+  \item The parameter `T\_0` is a numeric value indicate the upper bound of research interest. The default value is the maximal observed failure time or censor time. Sometimes there are some outlier observed failure time or censor time, so the estimated intensity of recurrent process becomes ill-behaved. In such case, using a smaller `T\_0` might help.  
+\end{enumerate}
+
+<<import_MMC>>=
+obj <- create_recurrent_data(head(MMC, 12), id = "id", time = "time", 
+                             time_type = "relatively", indicator = "event",
+                             indicator_value = list("recurrence" = 1, "censoring" = 0), 
+                             covariate = "group")
+obj
+@
+
+The name of slot should be directly mapped to the notations in Notation.~\ref{notation}.
+
+\subsection{Dataset colon in the \pkg{survrec}}
+\addcontentsline{toc}{subsection}{Dataset colon in the \pkg{survrec}}
+
+Here is the `colon` dataset in the \pkg{survrec}. The first 2 instances are shown in Table.~\ref{tb:colon}. To transform the `colon` to `recurrent-data`, we must specify the following arguments for `create\_recurrent\_data`:
+
+<<colon-Demo, echo=FALSE,results='asis'>>=
+data(colon)
+print(xtable(head(colon, 5), caption="This is the first two instances in `colon` dataset.", label="tb:colon"))
+@
+
+\begin{enumerate}
+  \item The `src` should be `colon`.
+  \item The `id` should be `hc` that is the identificator of each subject.
+  \item The `time` should be `"time"`.
+  \item The `time\_type` should be `"relative"`. The `cumsum(src[time])` should be the realization of the recurrent process.
+  \item The `indicator` should be `"event"`.
+  \item The `indicator\_value` should be `list("recurrence" = 1, "censoring" = 0)`. There is no data related to "failure".
+  \item The `covariate` should be `c("chemoter", "dukes", "distance")`.
+\end{enumerate}
+
+<<>>=
+obj <- create_recurrent_data(head(colon, 5), id="hc", time="time", 
+                             time_type="relatively", indicator="event",
+                             indicator_value=list("recurrence" = 1, "censoring" = 0), 
+                             covariate=c("chemoter", "dukes", "distance"))
+obj
+@
+
+Note that there is an `NA` in `colon[766,]`, so the user should remove that row before analyzing.
+
+\subsection{Dataset readmission in the \pkg{frailtypack}} \label{subsec:readmission}
+\addcontentsline{toc}{subsection}{Dataset readmission in the \pkg{frailtypack}}
+
+Here is the readmission dataset in the \pkg{frailtypack}. The first two instances are shown in Table.~\ref{tb:readmission}. 
+
+<<readmission-Demo,echo=FALSE, results='asis'>>=
+suppressPackageStartupMessages({
+  library(frailtypack)
+})
+data(readmission)
+print(xtable(head(readmission, 5), caption="The first two instance in the readmission dataset", label="tb:readmission"))
+@
+
+\begin{enumerate}
+  \item The `src` should be `readmission`.
+  \item The `id` should be `id` that is the identificator of each subject.
+  \item The `time` should be `"t.stop"`.
+  \item The `time\_type` should be `"absolutely"`. The `readmission\$t.stop` should be the realization of the recurrent process.
+  \item The `indicator` should be created by both column `"event"` and `"death"`. The value 1 of `event` represents recurrence. The value 0 of `event` and 0 of `death` represents censoring. The value 0 of `event` and 1 of `death` represents failure. Therefore, we should create a new column to be the indicator. Here we concatenate the column `event` and `death` to produce a new column `indicator`.
+  \item The `indicator\_value` should be `list("recurrence" = "1-0", "censoring" = "0-0", "failure" = "0-1")`. 
+  \item The `covariate` should be `c("chemo", "sex", "dukes", "charlson")`.
+\end{enumerate}
+
+<<readmission-1-1>>=
+readmission$indicator <- paste(readmission$event, readmission$death, sep="-")
+which(readmission$indicator == "1-1")
+@
+
+Note that there are three rows record recurrence and death simultaneously. We modify the `death` to `0` on these rows since the following censoring rows record the death as `1`, too.
+
+<<readmission>>=
+readmission$death[which(readmission$indicator == "1-1")] <- 0
+readmission$indicator <- paste(readmission$event, readmission$death, sep="-")
+obj <- create_recurrent_data(readmission, id="id", time="t.stop", time_type="absolutely", indicator="indicator", indicator_value=list("recurrence" = "1-0", "censoring" = "0-0", "failure" = "0-1"), covariate = c("chemo", "sex", "dukes", "charlson"))
+@
+
+\section[Analysis]{Analysis}
+\label{sec:analysis}
+\addcontentsline{toc}{section}{\thesection. Analysis}
+
+In this section, we will introduce how to analysis a `recurrent-data` object with the method developed in \cite{Wang2001,Huang2004,Huang2010}.
+
+\subsection[Wang2001]{Wang2001}
+\label{sec:wang_2001}
+\addcontentsline{toc}{section}{\thesection. Wang2001}
+
+For each instance $i$, \cite{Wang2001} assmues that the occurrence of recurrent event follows a inhomogenous poisson process with the following intensity:
+
+$$\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)$$
+
+where:
+
+- $z_i$ is a nonnegative-valued latent variable such that $E(z_i | W_i) = E(z_i)$.
+- The baseline intensity function $\lambda_0(t)$ is a probability function:
+    - $\lambda_0(t) \neq 0$
+    - $\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1$
+- $\gamma$ is a $\mathbb{R}^{1 \times q}$ vector.
+
+Here we takes the `recurrent-data` object transformed from the `readmission` data as indicated in Sec.~\ref{subsec:readmission}:
+
+<<wang2001>>=
+r <- Wang2001(obj)
+names(r)
+Lambda_0.hat <- r$Lambda_0.hat
+curve(Lambda_0.hat, 0, max(readmission$t.stop))
+@
+
+\textcolor{red}{The curve is ill-behaved because there are instance whose recurrent time and failure/censor time is totally larger than others.} A possitive correction is to limit the range of research interest. For example, setting the parameter `T\_0` in `create\_recurrent\_data` or use the API `truncate\_T\_0` to limit the research interest properly. The correction is changing the failure/censor time after new T\_0 to censor time at T\_0 and ignore the recurrent time after T\_0.
+
+<<wang2001-2>>=
+T_0 <- quantile(readmission$t.stop, 0.75)
+obj <- truncate_T_0(obj, T_0)
+r <- Wang2001(obj)
+Lambda_0.hat <- r$Lambda_0.hat
+curve(Lambda_0.hat, 0, T_0)
+@
+
+The estimated regression coefficient could be retrieve by:
+
+<<wang2001-3>>=
+r$gamma.bar.hat
+@
+
+To estimate the variance of the regression coefficient and the recurrent process, the user should specify the methodology. We provide `"asymptotic"` estimation and `"bootstrap"` estimation. The `"asymptotic"` is the plug-in estimator based on the appendix in \cite{Wang2001}. The bootstrap estimation is based on the non-parametric bootstrap.
+
+<<wang2001-4>>=
+r.asym <- Wang2001(obj, methods="asymptotic")
+Lambda_0.hat <- r.asym$Lambda_0.hat
+curve(Lambda_0.hat, 0, obj@T_0)
+Lambda_0.hat.var <- r.asym$Lambda_0.hat.var
+Lambda_0.hat.upper <- function(x) {
+  Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.upper, col = 2, add = TRUE, lty = 2)
+Lambda_0.hat.lower <- function(x) {
+  Lambda_0.hat(x) - qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.lower, col = 2, add = TRUE, lty = 2)
+r.boot <- Wang2001(obj, method="bootstrap")
+Lambda_0.hat.var <- r.boot$Lambda_0.hat.var
+Lambda_0.hat.upper <- function(x) {
+  Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.upper, col = 3, add = TRUE, lty = 2)
+Lambda_0.hat.lower <- function(x) {
+  Lambda_0.hat(x) - qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.lower, col = 3, add = TRUE, lty = 2)
+@
+
+
+
+\newpage
+\phantomsection
+\addcontentsline{toc}{section}{References}
+\bibliography{recurrentR.bib}
+
+\end{document}
+
