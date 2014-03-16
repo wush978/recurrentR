@@ -214,6 +214,7 @@ gamma.bar.hat_Huang2010.gen <- function(obj) {
     slv <- nleqslv(gamma.bar.hat, g, jac=g.grad)
     if (sum(abs(g(slv$x))) > obj@tol) stop("Failed to converge during solving gamma")
     obj@cache[[key]] <- slv$x
+    if (!is.null(colnames(obj@W))) names(obj@cache[[key]]) <- c("(Intercept)", colnames(obj@W))
   }
   obj@cache[[key]]
 }
@@ -684,7 +685,7 @@ Huang2010 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 1
     Lambda_0.hat = Lambda_0.hat_Huang2010.gen(obj)
   )
   if (methods[1] == "bootstrap") {
-    Lambda_0.hat.Bootstrap <- gamma.bar.hat.Bootstrap <- 
+    Lambda_0.hat.Bootstrap <- gamma.hat.Bootstrap <- 
       beta.hat.Bootstrap <- vector("list", B)
     for(i in seq_len(B)) {
       index.resampled <- sample(seq_len(obj@n), obj@n, TRUE)
@@ -699,13 +700,13 @@ Huang2010 <- function(obj, methods = c("none", "bootstrap", "asymptotic"), B = 1
       )
       temp <- Huang2010(obj.resampled, "none")
       Lambda_0.hat.Bootstrap[[i]] <- temp$Lambda_0.hat
-      gamma.bar.hat.Bootstrap[[i]] <- temp$gamma.bar.hat
+      gamma.hat.Bootstrap[[i]] <- temp$gamma.hat
       beta.hat.Bootstrap[[i]] <- temp$beta.hat
     }
     retval$Lambda_0.hat.var = Vectorize(function(t) {
       var(sapply(Lambda_0.hat.Bootstrap, function(f) f(t)))
     })
-    retval$gamma.bar.hat.var = var(do.call(rbind, gamma.bar.hat.Bootstrap))
+    retval$gamma.hat.var = var(do.call(rbind, gamma.hat.Bootstrap))
     retval$beta.hat.var = var(do.call(rbind, beta.hat.Bootstrap))
   }
   if (methods[1] == "asymptotic") notsupported()

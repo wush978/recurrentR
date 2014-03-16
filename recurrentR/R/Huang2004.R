@@ -59,7 +59,7 @@ alpha.hat.gen <- function(obj) {
     slv <- nleqslv(rep(0, ncol(obj@W)), U, Gamma)
     if (sum(abs(U(slv$x))) > obj@tol) stop("Failed to converge during solving gamma")
     obj@cache[["alpha.hat"]] <- slv$x
-    names(obj@cache[["alpha.hat"]]) <- colnames(obj@W)
+    if (!is.null(colnames(obj@W))) names(obj@cache[["alpha.hat"]]) <- colnames(obj@W)
   }
   obj@cache[["alpha.hat"]]
 }

@@ -65,7 +65,7 @@ gamma.bar.hat.gen <- function(obj) {
     slv <- nleqslv(gamma.bar.hat, g, jac=g.grad)
     if (sum(abs(g(slv$x))) > obj@tol) stop("Failed to converge during solving gamma")
     obj@cache[["gamma.bar.hat"]] <- slv$x
-    names(obj@cache[["gamma.bar.hat"]]) <- c("(Intercept)", colnames(obj@W))
+    if (!is.null(colnames(obj@W))) names(obj@cache[["gamma.bar.hat"]]) <- c("(Intercept)", colnames(obj@W))
   }
   obj@cache[["gamma.bar.hat"]]
 }
