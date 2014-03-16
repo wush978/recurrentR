@@ -101,3 +101,23 @@ d <- function(obj) {
 cache_clean <- function(obj) {
   rm(list=ls(obj@cache), envir=obj@cache)
 }
+
+#'@export
+truncate_T_0 <- function(obj, T_0) {
+  if (T_0 > obj@T_0) stop(sprintf("New T_0(%f) should be smaller than origin T_0(%f)", T_0, obj@T_0))
+  retval <- obj
+  retval@T_0 <- T_0
+  # correct data
+  for(i in seq_along(retval@y)) {
+    if (retval@y[i] > retval@T_0) {
+      retval@y[i] <- retval@T_0
+      retval@D[i] <- FALSE
+      retval@t[[i]] <- retval@t[[i]][which(retval@t[[i]] <= retval@T_0)]
+    }
+  }
+  validObject(retval)
+  retval@s <- s(retval)
+  retval@d <- d(retval)
+  cache_clean(retval)
+  retval
+}
