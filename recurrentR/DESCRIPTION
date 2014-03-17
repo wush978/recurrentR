@@ -5,7 +5,13 @@ Version: 0.1
 Date: 2013-11-12
 Author: Wush Wu
 Maintainer: Wush Wu <wush978@gmail.com>
-Description: This package provides a fast implementation of semi-parametric recurrent data analysis which studies how to estimate the recurrence process and survival function without assuming the independence between them.
+Description: This package provides an implementation of semi-parametric 
+      recurrent data analysis which studies how to estimate the recurrence 
+      process and survival function without assuming the independence between 
+      them. More specifically, this package implements the algorithm proposed 
+      in the three following papers: M.-C. Wang, Qin, and Chiang (2001), Huang 
+      and Chiung-Yu Huang and Wang (2004), and C.-Y. Huang, Qin, and Wang 
+      (2010).
 License: GPL(>= 3)
 Depends: Rcpp (>= 0.10.4), methods, nleqslv
 LinkingTo: Rcpp
