@@ -4,7 +4,7 @@
 
 <<setup, include=FALSE>>=
 library(knitr)
-opts_chunk$set(tidy=TRUE, tidy.opts=list(keep.blank.line=FALSE, width.cutoff=40), cache=TRUE, cache.path='cache_demo/')
+opts_chunk$set(tidy=FALSE, cache=TRUE, cache.path='cache_demo/')
 @
 
 <<import_data, echo=FALSE>>=
