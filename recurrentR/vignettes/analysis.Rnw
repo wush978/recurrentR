@@ -26,7 +26,7 @@ In this section, we will introduce how to analysis a `recurrent-data` object wit
 
 \subsection[Wang2001]{\cite{Wang2001}}
 \label{sec:wang_2001}
-\addcontentsline{toc}{section}{\thesection. Wang2001}
+\addcontentsline{toc}{subsection}{\thesubsection. Wang2001}
 
 For each instance $i$, \cite{Wang2001} assmues that the occurrence of recurrent event follows a inhomogenous poisson process with the following intensity:
   
@@ -100,7 +100,7 @@ legend('bottomright', c("asymptotic", "bootstrap"), col = 2:3, lty = 1)
 
 \subsection[Huang2004]{\cite{Huang2004}}
 \label{sec:huang_2004}
-\addcontentsline{toc}{section}{\thesection. Huang2004}
+\addcontentsline{toc}{subsection}{\thesubsection. Huang2004}
 
 Compared to \cite{Wang2001}, the model intensity of recurrent process is the same:
   
@@ -174,7 +174,7 @@ plotCI(seq_along(r2$alpha.hat), r2$alpha.hat, uiw=qnorm(0.975) * sqrt(diag(r2.bo
 
 \subsection[Huang2010]{\cite{Huang2010}}
 \label{sec:huang_2010}
-\addcontentsline{toc}{section}{\thesection. Huang2010}
+\addcontentsline{toc}{subsection}{\thesubsection. Huang2010}
 
 The intensity is:
   

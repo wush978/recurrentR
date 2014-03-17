@@ -24,7 +24,7 @@ The following data are required in the \pkg{recurrentR}:
 The \pkg{recurrentR} provides a S3 method `create\_recurrent\_data` to directly construct the `recurrent-data` object.
 
 \subsection{Dataset MMC in the \pkg{survrec}}
-\addcontentsline{toc}{subsection}{Dataset MMC in the \pkg{survrec}}
+\addcontentsline{toc}{subsection}{\thesubsection. Dataset MMC in the \pkg{survrec}}
 
 Here is the `MMC` data from \pkg{survrec}. Since the MMC puts all event times into a single data.frame, we take the instance with `id == 1` as an example (Table.~\ref{tb:MMC}). 
 
@@ -77,7 +77,7 @@ obj
 The name of slot should be directly mapped to the notations in Notation.~\ref{notation}.
 
 \subsection{Dataset colon in the \pkg{survrec}}
-\addcontentsline{toc}{subsection}{Dataset colon in the \pkg{survrec}}
+\addcontentsline{toc}{subsection}{\thesubsection. Dataset colon in the \pkg{survrec}}
 
 Here is the `colon` dataset in the \pkg{survrec}. The first 2 instances are shown in Table.~\ref{tb:colon}. To transform the `colon` to `recurrent-data`, we must specify the following arguments for `create\_recurrent\_data`:
   
@@ -107,7 +107,7 @@ obj
 Note that there is an `NA` in `colon[766,]`, so the user should remove that row before analyzing.
 
 \subsection{Dataset readmission in the \pkg{frailtypack}} \label{subsec:readmission}
-\addcontentsline{toc}{subsection}{Dataset readmission in the \pkg{frailtypack}}
+\addcontentsline{toc}{subsection}{\thesubsection. Dataset readmission in the \pkg{frailtypack}}
 
 Here is the readmission dataset in the \pkg{frailtypack}. The first two instances are shown in Table.~\ref{tb:readmission}. 
 

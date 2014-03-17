@@ -23,7 +23,7 @@ Taipei, Taiwan \\
 \title{A Quick Guide for the \pkg{recurrentR} Package}
 
 %% for pretty printing and a nice hypersummary also set:
-\Plainauthor{Wush Wu} %% comma-separated
+\Plainauthor{recurrentR} %% comma-separated
 \Plaintitle{Quick Guide for recurrentR} %% without formatting
 \Shorttitle{Quick Guide for recurrentR} %% a short title (if necessary)
 
