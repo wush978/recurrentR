@@ -86,16 +86,16 @@ I want to thank Chiung-Yu Huang for supporting this work. I also thank Hsiang Yu
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
-\include{recurrentR-include/introduction}
-\include{recurrentR-include/installation}
-\include{recurrentR-include/import_data}
-\include{recurrentR-include/analysis}
+\input{introduction}
+\input{installation}
+\input{import_data}
+\input{analysis}
 
 
 \newpage
 \phantomsection
 \addcontentsline{toc}{section}{References}
-\bibliography{recurrentR.bib}
+\bibliography{recurrentR}
 
 \end{document}
 

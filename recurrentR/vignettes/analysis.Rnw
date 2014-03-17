@@ -42,8 +42,8 @@ For each instance $i$, \cite{Wang2001} assmues that the occurrence of recurrent 
 
 Here we takes the `recurrent-data` object transformed from the `readmission` data as indicated in Sec.~\ref{subsec:readmission}:
   
-  <<wang2001>>=
-  r <- Wang2001(obj)
+<<wang2001>>=
+r <- Wang2001(obj)
 names(r)
 Lambda_0.hat <- r$Lambda_0.hat
 curve(Lambda_0.hat, 0, max(readmission$t.stop), main="Ill-behaved Cumulative Intensity Function of Recurrent Process")
@@ -52,7 +52,7 @@ curve(Lambda_0.hat, 0, max(readmission$t.stop), main="Ill-behaved Cumulative Int
 \textcolor{red}{The curve is ill-behaved because there are instance whose recurrent time and failure/censor time is totally larger than others.} A possitive correction is to limit the range of research interest. For example, setting the parameter `T\_0` in `create\_recurrent\_data` or use the API `truncate\_T\_0` to limit the research interest properly. The correction is changing the failure/censor time after new T\_0 to censor time at T\_0 and ignore the recurrent time after T\_0.
 
 <<wang2001-2>>=
-  T_0 <- quantile(readmission$t.stop, 0.75)
+T_0 <- quantile(readmission$t.stop, 0.75)
 obj <- truncate_T_0(obj, T_0)
 r <- Wang2001(obj)
 Lambda_0.hat <- r$Lambda_0.hat
@@ -61,14 +61,14 @@ curve(Lambda_0.hat, 0, T_0, main = "Cumulative Intensity Function of Recurrent P
 
 The estimated regression coefficient could be retrieve by:
   
-  <<wang2001-3>>=
-  r$gamma.bar.hat
+<<wang2001-3>>=
+r$gamma.bar.hat
 @
 
 To estimate the variance of the regression coefficient and the recurrent process, the user should specify the methodology. We provide `"asymptotic"` estimation and `"bootstrap"` estimation. The `"asymptotic"` is the plug-in estimator based on the appendix in \cite{Wang2001}. The bootstrap estimation is based on the non-parametric bootstrap and the parameter `B` specifies the number of bootstrapping.
 
 <<wang2001-4>>=
-  r.asym <- Wang2001(obj, methods="asymptotic")
+r.asym <- Wang2001(obj, methods="asymptotic")
 Lambda_0.hat <- r.asym$Lambda_0.hat
 curve(Lambda_0.hat, 0, obj@T_0, "95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
 Lambda_0.hat.var <- r.asym$Lambda_0.hat.var
