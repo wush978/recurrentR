@@ -7,8 +7,8 @@ The \pkg{recurrentR} depends on the \pkg{Rcpp} and the \pkg{nleqslv}. Please ins
 One can install \pkg{recurrentR} from github at
 \url{https://github.com/wush978/recurrentR}, and
 the intallation can be done with the following commands
-<<install-github, eval=FALSE>>=
+<<install-github, eval=FALSE, tidy=FALSE>>=
 library(devtools)
-install_github(repo='recurrentR', username='wush978', subdir='recurrentR',
-               build_vignettes = FALSE)
+install_github(repo='recurrentR', username='wush978', 
+               subdir='recurrentR', build_vignettes = FALSE)
 @
