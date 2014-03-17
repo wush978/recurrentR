@@ -1,0 +1,104 @@
+\subsection[Wang2001]{\cite{Wang2001}}
+\label{sec:wang_2001}
+\addcontentsline{toc}{subsection}{\thesubsection. Wang2001}
+
+<<setup>>=
+library(knitr)
+opts_chunk$set(cache=TRUE, echo=FALSE, cache.path='cache_simulation/')
+@
+
+<<wang_2001_generation>>=
+library(recurrentR)
+library(RPPGen)
+library(plotrix)
+p <- 0.5
+b <- 2
+T_0 <- 10
+n <- 400
+lambda_0 <- local({
+  lambda_0.0 <- function(u) (u-6)^3/360+0.6 #baseline intensity function
+  Total <- integrate(lambda_0.0, 0, T_0)$value
+  function(u) lambda_0.0(u) / Total
+})
+# curve(lambda_0, 0, T_0)
+Lambda_0 <- Vectorize(function(t) {integrate(lambda_0,0,t)$value})
+# curve(Lambda_0, 0, 10)
+gamma.true <- local({
+  Ez.0 <- 1
+  Ez.1 <- exp(-log(2.75)) * 5.5 / 5 
+  c(log(Ez.0), log(exp(b) * Ez.1))
+})
+
+gen_wang_2001 <- function() {
+  x <- rbinom(n,1,p)
+  z.star <- sapply(x, function(s) ifelse(s==0,runif(1,0.5,1.5),runif(1,1.5,4)/2.5)) 
+  z <- exp(-x*log(2.75))*z.star 
+  y <- mapply(function(z,u) -1/(z/10)*log(exp(-z/10)*u+exp(-z)*(1-u)),z=z,u=runif(n))
+  
+  t <- list()
+  for(i in seq_len(n)) {
+    f <- function(t) {
+      z[i]*exp(b*x[i])*lambda_0(t)
+    }
+    t[[i]] <- gen_inhomo_poisson(f, T_0=min(T_0, y[i]))
+  }
+  create_recurrent_data(y, y < T_0, t, T_0, matrix(x, nrow = n))
+}
+@
+
+<<wang_2001_parametric_bootstrap>>=
+if (interactive()) B <- 5 else B <- 1000
+gamma.hat <- matrix(NA, B, 2)
+x.eval <- seq(from=0, to=T_0, length.out=100)
+Lambda_0.hat <- matrix(NA, B, length(x.eval))
+if (interactive()) pb <- txtProgressBar(max = B, style = 3)
+for(i in seq_len(B)) {
+  temp <- Wang2001(obj=gen_wang_2001())
+  gamma.hat[i,] <- temp$gamma.bar.hat
+  Lambda_0.hat[i,] <- temp$Lambda_0.hat(x.eval)
+  gc()
+  if (interactive()) setTxtProgressBar(pb, i)
+}
+if (interactive()) close(pb)
+# curve(Lambda_0, 0, 10, col = 2, ylim = c(0, 1.2))
+# y.eval <- apply(Lambda_0.hat, 2, mean)
+# y.eval.sd <- apply(Lambda_0.hat, 2, sd)
+# lines(x.eval, y.eval)
+# lines(x.eval, y.eval + qnorm(0.975) * y.eval.sd, lty = 2)
+# lines(x.eval, y.eval - qnorm(0.975) * y.eval.sd, lty = 2)
+# plotCI(1:2, apply(gamma.hat, 2, mean), uiw=apply(gamma.hat, 2, sd), 
+#        main = "Parametric Bootstrap", xlab = "", ylab = "", xaxt="n")
+# points(1:2, gamma.true, col = 2)
+@
+
+<<wang_2001_nonparametric_bootstrap>>=
+obj <- gen_wang_2001()
+wang_2001 <- Wang2001(obj=obj, methods="bootstrap")
+wang_2001.a <- Wang2001(obj=obj, methods="asymptotic")
+curve(Lambda_0, 0, 10, col = 2, ylim = c(0, 1.2))
+Lambda_0.hat <- function(x) wang_2001$Lambda_0.hat(x)
+curve(Lambda_0.hat, add=TRUE, 0, 10, col = 1)
+Lambda_0.hat.upper <- Vectorize(function(x) {
+  wang_2001$Lambda_0.hat(x) + 2 * sqrt(wang_2001$Lambda_0.hat.var(x))
+})
+curve(Lambda_0.hat.upper, add=TRUE, col=3, 0, 10, lty = 2)
+Lambda_0.hat.lower <- Vectorize(function(x) wang_2001$Lambda_0.hat(x) - 2 * sqrt(wang_2001$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.lower, add=TRUE, col=3, 0, 10, lty = 2)
+Lambda_0.hat.upper.a <- Vectorize(function(x) {
+  wang_2001.a$Lambda_0.hat(x) + 2 * sqrt(wang_2001.a$Lambda_0.hat.var(x))
+})
+curve(Lambda_0.hat.upper.a, add=TRUE, col=4, 0, 10, lty = 3)
+Lambda_0.hat.lower.a <- Vectorize(function(x) wang_2001.a$Lambda_0.hat(x) - 2 * sqrt(wang_2001.a$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.lower.a, add=TRUE, col=4, 0, 10, lty = 3)
+lines(x.eval, y.eval + qnorm(0.975) * y.eval.sd, lty = 4, col=5)
+lines(x.eval, y.eval - qnorm(0.975) * y.eval.sd, lty = 4, col=5)
+legend(
+  "topleft", c("real survival", "estimated survival", "bootstrap C.I.", "asymptotic C.I.", "parametric bootstrap C.I."), 
+  lty = c(1, 1, 2, 3, 4), col = c(2, 1, 3, 4, 5))
+
+plotCI(1:2 + 0.1, wang_2001.a$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(wang_2001.a$gamma.bar.hat.var)), col = 4, main = "Estimation of gamma", xlab = "", ylab = "", xaxt="n", xlim=c(1,2.1), )
+plotCI(1:2, apply(gamma.hat, 2, mean), uiw=apply(gamma.hat, 2, sd), add = TRUE)
+plotCI(1:2 + 0.05, wang_2001$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(wang_2001$gamma.bar.hat.var)), xlim=c(1,2.1), col = 3, add=TRUE)
+points(1:2, gamma.true, col = 2)
+legend("topleft", c("real gamma", "parametric bootstrap", "bootstrap", "asymptotic"), pch = 1, lty = c(0, 1, 1, 1), col = c(2, 1, 3, 4))
+@

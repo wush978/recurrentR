@@ -1,0 +1,3 @@
+\subsection[Huang2004]{\cite{Huang2004}}
+\label{sec:huang_2004}
+\addcontentsline{toc}{subsection}{\thesubsection. Huang2004}

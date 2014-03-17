@@ -1,0 +1,19 @@
+\section[Simulation]{Simulation}
+\label{sec:simulation}
+\addcontentsline{toc}{section}{\thesection. Simulation}
+
+<<setup>>=
+library(knitr)
+opts_chunk$set(cache=TRUE, echo=FALSE, cache.path='cache_simulation/')
+@
+
+We conduct some simulation studies to test the correctness of the package. The source codes are not showed here, but the reader could find them under `vignettes/`. We use a self developed package to generate the realization of inhomogenous poisson process. Please install the package if you want to re-run the simulation.
+
+<<package_install, echo=FALSE, eval=FALSE>>=
+library(devtools)
+install_github('RPPGen', username='wush978')
+@
+
+\input{simulation_wang2001}
+\input{simulation_huang2004}
+\input{simulation_huang2010}
