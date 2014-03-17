@@ -1,0 +1,5 @@
+\section[Introduction]{Introduction}
+\label{sec:introduction}
+\addcontentsline{toc}{section}{\thesection. Introduction}
+
+The package \pkg{recurrentR} is encouraged by Chiung-Yu Huang since May, 2013. We want to provide a fast implementation of \cite{Wang2001,Huang2004,Huang2010} to the researchers who are interesting in semi-parametric recurrent data analysis. They studied how to estimate the recurrence process and survival function without assuming the independence between the recurrent process and the failure rate.

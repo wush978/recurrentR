@@ -1,0 +1,221 @@
+\section[Analysis]{Analysis}
+\label{sec:analysis}
+\addcontentsline{toc}{section}{\thesection. Analysis}
+
+<<setup, include=FALSE>>=
+library(knitr)
+opts_chunk$set(tidy=TRUE, tidy.opts=list(keep.blank.line=FALSE, width.cutoff=40), cache=TRUE)
+suppressPackageStartupMessages({
+  library(recurrentR)
+  library(survrec)
+  library(xtable)
+  library(dplyr)
+})
+suppressPackageStartupMessages({
+  library(frailtypack)
+})
+data(readmission)
+readmission$indicator <- paste(readmission$event, readmission$death, sep="-")
+which(readmission$indicator == "1-1")
+readmission$death[which(readmission$indicator == "1-1")] <- 0
+readmission$indicator <- paste(readmission$event, readmission$death, sep="-")
+obj <- create_recurrent_data(readmission, id="id", time="t.stop", time_type="absolutely", indicator="indicator", indicator_value=list("recurrence" = "1-0", "censoring" = "0-0", "failure" = "0-1"), covariate = c("chemo", "sex", "dukes", "charlson"))
+@
+
+In this section, we will introduce how to analysis a `recurrent-data` object with the method developed in \cite{Wang2001,Huang2004,Huang2010}.
+
+\subsection[Wang2001]{\cite{Wang2001}}
+\label{sec:wang_2001}
+\addcontentsline{toc}{section}{\thesection. Wang2001}
+
+For each instance $i$, \cite{Wang2001} assmues that the occurrence of recurrent event follows a inhomogenous poisson process with the following intensity:
+  
+  $$\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)$$
+  
+  where:
+  
+  - $z_i$ is a nonnegative-valued latent variable such that $E(z_i | W_i) = E(z_i)$.
+- The baseline intensity function $\lambda_0(t)$ is a probability function:
+  - $\lambda_0(t) \neq 0$
+  - $\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1$
+  - $\gamma$ is a $\mathbb{R}^{1 \times q}$ vector.
+
+Here we takes the `recurrent-data` object transformed from the `readmission` data as indicated in Sec.~\ref{subsec:readmission}:
+  
+  <<wang2001>>=
+  r <- Wang2001(obj)
+names(r)
+Lambda_0.hat <- r$Lambda_0.hat
+curve(Lambda_0.hat, 0, max(readmission$t.stop), main="Ill-behaved Cumulative Intensity Function of Recurrent Process")
+@
+
+\textcolor{red}{The curve is ill-behaved because there are instance whose recurrent time and failure/censor time is totally larger than others.} A possitive correction is to limit the range of research interest. For example, setting the parameter `T\_0` in `create\_recurrent\_data` or use the API `truncate\_T\_0` to limit the research interest properly. The correction is changing the failure/censor time after new T\_0 to censor time at T\_0 and ignore the recurrent time after T\_0.
+
+<<wang2001-2>>=
+  T_0 <- quantile(readmission$t.stop, 0.75)
+obj <- truncate_T_0(obj, T_0)
+r <- Wang2001(obj)
+Lambda_0.hat <- r$Lambda_0.hat
+curve(Lambda_0.hat, 0, T_0, main = "Cumulative Intensity Function of Recurrent Process")
+@
+
+The estimated regression coefficient could be retrieve by:
+  
+  <<wang2001-3>>=
+  r$gamma.bar.hat
+@
+
+To estimate the variance of the regression coefficient and the recurrent process, the user should specify the methodology. We provide `"asymptotic"` estimation and `"bootstrap"` estimation. The `"asymptotic"` is the plug-in estimator based on the appendix in \cite{Wang2001}. The bootstrap estimation is based on the non-parametric bootstrap and the parameter `B` specifies the number of bootstrapping.
+
+<<wang2001-4>>=
+  r.asym <- Wang2001(obj, methods="asymptotic")
+Lambda_0.hat <- r.asym$Lambda_0.hat
+curve(Lambda_0.hat, 0, obj@T_0, "95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
+Lambda_0.hat.var <- r.asym$Lambda_0.hat.var
+Lambda_0.hat.upper <- function(x) {
+  Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.upper, col = 2, add = TRUE, lty = 2)
+Lambda_0.hat.lower <- function(x) {
+  Lambda_0.hat(x) - qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.lower, col = 2, add = TRUE, lty = 2)
+r.boot <- Wang2001(obj, method="bootstrap", B=1000)
+Lambda_0.hat.var <- r.boot$Lambda_0.hat.var
+Lambda_0.hat.upper <- function(x) {
+  Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.upper, col = 3, add = TRUE, lty = 2)
+Lambda_0.hat.lower <- function(x) {
+  Lambda_0.hat(x) - qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.lower, col = 3, add = TRUE, lty = 2)
+legend('bottomright', c("asymptotic", "bootstrap"), lty = 2, col = 2:3)
+
+library(plotrix)
+plotCI(seq_along(r$gamma.bar.hat), r$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(r.asym$gamma.bar.hat.var)), col=2, main="95% C.I. of regression parameter")
+plotCI(seq_along(r$gamma.bar.hat) + 0.1, r$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(r.boot$gamma.bar.hat.var)), col=3, add=TRUE)
+legend('bottomright', c("asymptotic", "bootstrap"), col = 2:3, lty = 1)
+@
+
+\subsection[Huang2004]{\cite{Huang2004}}
+\label{sec:huang_2004}
+\addcontentsline{toc}{section}{\thesection. Huang2004}
+
+Compared to \cite{Wang2001}, the model intensity of recurrent process is the same:
+  
+  $$\lambda_i(t) = \lambda_0(t) z_i exp(W_i \gamma)$$
+  
+  where:
+  
+  - $z_i$ is a nonnegative-valued latent variable such that $E(z_i | W_i) = E(z_i)$.
+- The baseline intensity function $\lambda_0(t)$ is a probability function:
+  - $\lambda_0(t) \neq 0$
+  - $\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1$
+  - $\gamma$ is a $\mathbb{R}^{1 \times q}$ vector.
+
+Moreover, the hazard function of the censor time is modeled as
+
+$$h_i(t) = h_0(t) z_i exp(W_i \alpha)$$
+  
+  where:
+  
+  - $\alpha$ is a $\mathbb{R}^{1 \times q}$ vector.
+- We let $H_0(t) = \int_{0}^{t}{h_0(u) du}$
+  
+  Conditional on $(W_i, z_i)$, $N_i(.)$ and $y_i$ are independent.
+
+The API `Huang2004` makes the inference based on the model proposed in \cite{Huang2004}. It not only return the estimated $\Lambda_0(t)$, but also privide the estimated hazard function $H_0(t)$ and the regression parameter $\alpha$:
+  
+  <<huang2004-1>>=
+  r2 <- Huang2004(obj)
+names(r2)
+r2$gamma.bar.hat
+r2$alpha.hat
+@
+
+Given the parameter of `method` asks the API `Huang2004` estimates the variance of the regression coefficient of recurrent process, the intensity of the recurrent process, the coefficient of hazard function and cumulative hazard function. So far we only provide non-parametric bootstrap estimation. The asymptotic estimator is still under development.
+
+<<huang2004-2>>=
+  r2.boot <- Huang2004(obj, methods="bootstrap", B = 100)
+Lambda_0.hat <- r2.boot$Lambda_0.hat
+curve(Lambda_0.hat, 0, obj@T_0, main="95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
+Lambda_0.hat.var <- r2.boot$Lambda_0.hat.var
+Lambda_0.hat.upper <- function(x) {
+  Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.upper, col = 3, add = TRUE, lty = 2)
+Lambda_0.hat.lower <- function(x) {
+  Lambda_0.hat(x) - qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.lower, col = 3, add = TRUE, lty = 2)
+legend('bottomright', c("bootstrap"), lty = 2, col = 3)
+
+library(plotrix)
+plotCI(seq_along(r2$gamma.bar.hat) + 0.1, r2$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(r2.boot$gamma.bar.hat.var)), col=3, main = "95% C.I. of regression parameter")
+legend('bottomright', c("bootstrap"), col = 3, lty = 1)
+
+H_0.hat <- r2$H0.hat
+curve(H_0.hat, 0, obj@T_0, ylim = c(0, H_0.hat(obj@T_0)) * 2,
+      main = "H_0.hat")
+H_0.hat.var <- r2.boot$H0.hat.var
+H_0.hat.upper <- function(x) {
+  H_0.hat(x) + qnorm(0.975) * sqrt(H_0.hat.var(x))
+}
+curve(H_0.hat.upper, col = 3, add = TRUE, lty = 2)
+H_0.hat.lower <- function(x) {
+  H_0.hat(x) - qnorm(0.975) * sqrt(H_0.hat.var(x))
+}
+curve(H_0.hat.lower, col = 3, add = TRUE, lty = 2)
+
+library(plotrix)
+plotCI(seq_along(r2$alpha.hat), r2$alpha.hat, uiw=qnorm(0.975) * sqrt(diag(r2.boot$alpha.hat.var)), main = "95% C.I. of alpha")
+@
+
+\subsection[Huang2010]{\cite{Huang2010}}
+\label{sec:huang_2010}
+\addcontentsline{toc}{section}{\thesection. Huang2010}
+
+The intensity is:
+  
+  $$\lambda_i(t) = \lambda_0(t) z_i exp(X_i(t) \beta + \gamma W_i)$$
+  
+  where:
+  
+  - $z_i$ is a nonnegative-valued latent variable such that $E(z_i | W_i) = E(z_i)$.
+- The baseline intensity function $\lambda_0(t)$ is a probability function:
+  - $\lambda_0(t) \neq 0$
+  - $\Lambda_0(T_0) = \int_0^{T_0} \lambda_0(u) du = 1$
+  - $\gamma$ is a $\mathbb{R}^{1 \times q}$ vector.
+- $\beta$ is a $\mathbb(R)^{1 \times p}$ vector.
+
+Conditional on $(W_i, z_i, X_i)$, $N_i(.)$ and $y_i$ are independent.
+
+The API `Huang2010` estimates the $\Lambda_0$, $\gamma$ and $\beta$ according to the method proposed in \cite{Huang2010}. To use the API, we must provide the time dependent covariates. We demo an example with synthetic dataset as follow.
+
+
+<<huang2010-1>>=
+  data(Huang2010Demo)
+r3 <- Huang2010(Huang2010Demo, methods="bootstrap", 100)
+# Please wait a while...
+names(r3)
+par.hat <- c(r3$beta.hat, r3$gamma.hat)
+par.sd <- c(sqrt(r3$beta.hat.var), sqrt(diag(r3$gamma.hat.var)))
+plotCI(seq_along(par.hat), par.hat, uiw = qnorm(0.975) * par.sd, xaxt='n')
+axis(side=1, at = 1:3, labels=c(expression(beta), expression(gamma[1]), expression(gamma[2])))
+title(main = "95% C.I. of regression parameter")
+
+Lambda_0.hat <- r3$Lambda_0.hat
+curve(Lambda_0.hat, 0, Huang2010Demo@T_0, main="95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
+Lambda_0.hat.var <- r3$Lambda_0.hat.var
+Lambda_0.hat.upper <- function(x) {
+  Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.upper, col = 3, add = TRUE, lty = 2)
+Lambda_0.hat.lower <- function(x) {
+  Lambda_0.hat(x) - qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
+}
+curve(Lambda_0.hat.lower, col = 3, add = TRUE, lty = 2)
+legend('bottomright', c("bootstrap"), lty = 2, col = 3)
+@
+
