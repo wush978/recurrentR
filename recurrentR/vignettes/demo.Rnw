@@ -1,10 +1,13 @@
-\section[Analysis]{Analysis}
-\label{sec:analysis}
-\addcontentsline{toc}{section}{\thesection. Analysis}
+\section[Demo]{Demo}
+\label{sec:demo}
+\addcontentsline{toc}{section}{\thesection. Demo}
 
 <<setup, include=FALSE>>=
 library(knitr)
-opts_chunk$set(tidy=TRUE, tidy.opts=list(keep.blank.line=FALSE, width.cutoff=40), cache=TRUE)
+opts_chunk$set(tidy=TRUE, tidy.opts=list(keep.blank.line=FALSE, width.cutoff=40), cache=TRUE, cache.path='cache_demo/')
+@
+
+<<import_data, echo=FALSE>>=
 suppressPackageStartupMessages({
   library(recurrentR)
   library(survrec)
@@ -16,7 +19,7 @@ suppressPackageStartupMessages({
 })
 data(readmission)
 readmission$indicator <- paste(readmission$event, readmission$death, sep="-")
-which(readmission$indicator == "1-1")
+# which(readmission$indicator == "1-1")
 readmission$death[which(readmission$indicator == "1-1")] <- 0
 readmission$indicator <- paste(readmission$event, readmission$death, sep="-")
 obj <- create_recurrent_data(readmission, id="id", time="t.stop", time_type="absolutely", indicator="indicator", indicator_value=list("recurrence" = "1-0", "censoring" = "0-0", "failure" = "0-1"), covariate = c("chemo", "sex", "dukes", "charlson"))
@@ -70,7 +73,7 @@ To estimate the variance of the regression coefficient and the recurrent process
 <<wang2001-4>>=
 r.asym <- Wang2001(obj, methods="asymptotic")
 Lambda_0.hat <- r.asym$Lambda_0.hat
-curve(Lambda_0.hat, 0, obj@T_0, "95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
+curve(Lambda_0.hat, 0, obj@T_0, main="95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
 Lambda_0.hat.var <- r.asym$Lambda_0.hat.var
 Lambda_0.hat.upper <- function(x) {
   Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
