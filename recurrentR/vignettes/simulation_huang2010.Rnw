@@ -1,4 +1,101 @@
-
 \subsection[Huang2010]{\cite{Huang2010}}
 \label{sec:huang_2010}
 \addcontentsline{toc}{subsection}{\thesubsection. Huang2010}
+
+<<setup>>=
+library(knitr)
+opts_chunk$set(cache=TRUE, echo=FALSE, cache.path='cache_simulation/')
+@
+
+<<huang_2010_generation>>=
+suppressPackageStartupMessages({
+  library(recurrentR)
+  library(RPPGen)
+  library(plotrix)
+})
+a <- 0.5
+b <- 0.3
+p <- 0.5
+T_0 <- 10
+n <- 400
+lambda_0 <- local({
+  lambda_0 <- function(u) 1/2 #default
+  Total <- T_0 / 2
+  function(u) { 
+    lambda_0(u) / Total
+  }
+})
+Lambda_0 <- function(u) u / T_0
+h_0 <- function(u) k_y * u ^ (k_y - 1) / lambda_y ^ k_y
+H_0 <- function(t) (t / lambda_y) ^ k_y
+
+Ez <- 1
+beta.true <- b
+gamma.true <- c(log(Ez), a)
+
+gen_huang_2010 <- function() {
+  z <- rgamma(n,1/4,scale=4)	
+	w <- rbinom(n,1,p)	
+	x <- runif(n)
+  x_t <- function(i) {
+    force(i)
+		u <- x[i] 
+		function(t){u*log(t)}
+	}
+  X <- lapply(1:n, x_t)
+  y <- mapply(function(w,z,x) ifelse(w==1, rexp(1,1/10),
+  					ifelse(x>0.5, rexp(1,1/(6*z+4)),
+							rexp(1,1/(10*x+5)))), w=w, z=z, x=x)
+  y[y > T_0] <- T_0
+  t <- vector("list", n)
+  for(i in seq_len(n)) {
+    lambda_i <- function(t) z[i]*exp(a*x[i] + b*X[[i]](t))*lambda_0(t)
+    t[[i]] <- gen_inhomo_poisson(lambda_i, y[i], z[i] * exp(a * x[i] + b * x[i] * log(T_0) * b) * 1/2)
+  }
+  create_recurrent_data(X, y, y < T_0, t, T_0, matrix(x, nrow = n))
+}
+@
+
+<<parametric_bootstrap>>=
+if (interactive()) B <- 5 else B <- 1000 
+gamma.hat <- matrix(NA, B, 2)
+beta.hat <- numeric(B)
+x.eval <- seq(from=0, to=T_0, length.out=100)
+Lambda_0.hat <- matrix(NA, B, length(x.eval))
+if (interactive()) pb <- txtProgressBar(max = B, style = 3)
+for(i in seq_len(B)) {
+  temp <- Huang2010(obj=gen_huang_2010())
+  gamma.hat[i,] <- temp$gamma.hat
+  Lambda_0.hat[i,] <- temp$Lambda_0.hat(x.eval)
+  beta.hat[i] <- temp$beta.hat
+  gc()
+  if (interactive()) setTxtProgressBar(pb, i)
+}
+if (interactive()) close(pb)
+y.eval <- apply(Lambda_0.hat, 2, mean)
+y.eval.sd <- apply(Lambda_0.hat, 2, sd)
+@
+
+<<nonparametric_bootstrap>>=
+curve(Lambda_0, 0, 10, col = 2, ylim = c(0, 1.2))
+obj <- gen_huang_2010()
+huang_2010 <- Huang2010(obj=obj, methods="bootstrap", B = 1000)
+Lambda_0.hat <- function(x) huang_2010$Lambda_0.hat(x)
+curve(Lambda_0.hat, 0, 10, col = 1, add = TRUE)
+Lambda_0.hat.upper <- Vectorize(function(x) huang_2010$Lambda_0.hat(x) + qnorm(0.975) * sqrt(huang_2010$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.upper, add=TRUE, col=3, 0, 10, lty = 2)
+Lambda_0.hat.lower <- Vectorize(function(x) huang_2010$Lambda_0.hat(x) - qnorm(0.975) * sqrt(huang_2010$Lambda_0.hat.var(x)))
+curve(Lambda_0.hat.lower, add=TRUE, col=3, 0, 10, lty = 2)
+lines(x.eval, y.eval + qnorm(0.975) * y.eval.sd, lty = 4, col=5)
+lines(x.eval, y.eval - qnorm(0.975) * y.eval.sd, lty = 4, col=5)
+legend(
+  "topleft", c("real survival", "estimated survival", "bootstrap C.I.", "asymptotic C.I.", "parametric bootstrap C.I."), 
+  lty = c(1, 1, 2, 3, 4), col = c(2, 1, 3, 4, 5))
+
+coef.true <- c(gamma.true, beta.true)
+coef.est <- c(huang_2010$gamma.hat, huang_2010$beta.hat)
+plotCI(1:3, c(apply(gamma.hat, 2, mean), mean(beta.hat)), uiw=c(apply(gamma.hat, 2, sd), sd(beta.hat)) * qnorm(0.975), main = "Estimation of gamma", xlab = "", ylab = "", xaxt="n", xlim=c(1,3.1), ylim = c(-1, 2))
+plotCI(seq_along(coef.est) + 0.1, coef.est, uiw=c(sqrt(diag(huang_2010$gamma.hat.var)), sqrt(diag(huang_2010$beta.hat.var))) * qnorm(0.975), col = 3, add = TRUE)
+points(1:3, coef.true, col = 2)
+legend("topleft", c("real gamma", "parametric bootstrap", "bootstrap", "asymptotic"), pch = 1, lty = c(0, 1, 1, 1), col = c(2, 1, 3, 4))
+@
