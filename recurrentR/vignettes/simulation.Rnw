@@ -2,7 +2,7 @@
 \label{sec:simulation}
 \addcontentsline{toc}{section}{\thesection. Simulation}
 
-<<setup>>=
+<<setup, include=FALSE>>=
 library(knitr)
 opts_chunk$set(cache=TRUE, echo=FALSE, cache.path='cache_simulation/')
 @
