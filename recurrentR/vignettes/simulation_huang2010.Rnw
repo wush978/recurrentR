@@ -2,7 +2,7 @@
 \label{sec:huang_2010}
 \addcontentsline{toc}{subsection}{\thesubsection. Huang2010}
 
-<<setup>>=
+<<setup, include=FALSE>>=
 library(knitr)
 opts_chunk$set(cache=TRUE, echo=FALSE, cache.path='cache_simulation/')
 @

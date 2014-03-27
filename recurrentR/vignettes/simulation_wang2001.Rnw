@@ -2,7 +2,7 @@
 \label{sec:wang_2001}
 \addcontentsline{toc}{subsection}{\thesubsection. Wang2001}
 
-<<setup>>=
+<<setup, include=FALSE>>=
 library(knitr)
 opts_chunk$set(cache=TRUE, echo=FALSE, cache.path='cache_simulation_wang2001/')
 @
