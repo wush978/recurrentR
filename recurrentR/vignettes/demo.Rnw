@@ -49,17 +49,19 @@ Here we takes the `recurrent-data` object transformed from the `readmission` dat
 r <- Wang2001(obj)
 names(r)
 Lambda_0.hat <- r$Lambda_0.hat
-curve(Lambda_0.hat, 0, max(readmission$t.stop), main="Ill-behaved Cumulative Intensity Function of Recurrent Process")
+curve(Lambda_0.hat, 0, max(readmission$t.stop), 
+      main="Ill-behaved Cumulative Intensity Function of Recurrent Process")
 @
 
-\textcolor{red}{The curve is ill-behaved because there are instance whose recurrent time and failure/censor time is totally larger than others.} A possitive correction is to limit the range of research interest. For example, setting the parameter `T\_0` in `create\_recurrent\_data` or use the API `truncate\_T\_0` to limit the research interest properly. The correction is changing the failure/censor time after new T\_0 to censor time at T\_0 and ignore the recurrent time after T\_0.
+\textcolor{red}{The curve is ill-behaved because there are instances whose recurrent time and failure/censor time is totally larger than others.} A possitive correction is to limit the range of research interest. For example, setting the parameter `T\_0` in `create\_recurrent\_data` or use the API `truncate\_T\_0` to limit the research interest properly. The correction is changing the failure/censor time after new T\_0 to censor time at T\_0 and ignore the recurrent time after T\_0.
 
 <<wang2001-2>>=
 T_0 <- quantile(readmission$t.stop, 0.75)
 obj <- truncate_T_0(obj, T_0)
 r <- Wang2001(obj)
 Lambda_0.hat <- r$Lambda_0.hat
-curve(Lambda_0.hat, 0, T_0, main = "Cumulative Intensity Function of Recurrent Process")
+curve(Lambda_0.hat, 0, T_0, 
+      main = "Cumulative Intensity Function of Recurrent Process")
 @
 
 The estimated regression coefficient could be retrieve by:
@@ -73,7 +75,9 @@ To estimate the variance of the regression coefficient and the recurrent process
 <<wang2001-4>>=
 r.asym <- Wang2001(obj, methods="asymptotic")
 Lambda_0.hat <- r.asym$Lambda_0.hat
-curve(Lambda_0.hat, 0, obj@T_0, main="95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
+curve(Lambda_0.hat, 0, obj@T_0, 
+      main="95% Pointwise C.B. of 
+      Cumulative Intensity Function of Recurrent Process")
 Lambda_0.hat.var <- r.asym$Lambda_0.hat.var
 Lambda_0.hat.upper <- function(x) {
   Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
@@ -96,8 +100,13 @@ curve(Lambda_0.hat.lower, col = 3, add = TRUE, lty = 2)
 legend('bottomright', c("asymptotic", "bootstrap"), lty = 2, col = 2:3)
 
 library(plotrix)
-plotCI(seq_along(r$gamma.bar.hat), r$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(r.asym$gamma.bar.hat.var)), col=2, main="95% C.I. of regression parameter")
-plotCI(seq_along(r$gamma.bar.hat) + 0.1, r$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(r.boot$gamma.bar.hat.var)), col=3, add=TRUE)
+plotCI(seq_along(r$gamma.bar.hat), 
+       r$gamma.bar.hat, 
+       uiw=qnorm(0.975) * sqrt(diag(r.asym$gamma.bar.hat.var)), 
+       col=2, main="95% C.I. of regression parameter")
+plotCI(seq_along(r$gamma.bar.hat) + 0.1, r$gamma.bar.hat, 
+       uiw=qnorm(0.975) * sqrt(diag(r.boot$gamma.bar.hat.var)), 
+       col=3, add=TRUE)
 legend('bottomright', c("asymptotic", "bootstrap"), col = 2:3, lty = 1)
 @
 
@@ -130,8 +139,8 @@ $$h_i(t) = h_0(t) z_i exp(W_i \alpha)$$
 
 The API `Huang2004` makes the inference based on the model proposed in \cite{Huang2004}. It not only return the estimated $\Lambda_0(t)$, but also privide the estimated hazard function $H_0(t)$ and the regression parameter $\alpha$:
   
-  <<huang2004-1>>=
-  r2 <- Huang2004(obj)
+<<huang2004-1>>=
+r2 <- Huang2004(obj)
 names(r2)
 r2$gamma.bar.hat
 r2$alpha.hat
@@ -140,9 +149,11 @@ r2$alpha.hat
 Given the parameter of `method` asks the API `Huang2004` estimates the variance of the regression coefficient of recurrent process, the intensity of the recurrent process, the coefficient of hazard function and cumulative hazard function. So far we only provide non-parametric bootstrap estimation. The asymptotic estimator is still under development.
 
 <<huang2004-2>>=
-  r2.boot <- Huang2004(obj, methods="bootstrap", B = 100)
+r2.boot <- Huang2004(obj, methods="bootstrap", B = 100)
 Lambda_0.hat <- r2.boot$Lambda_0.hat
-curve(Lambda_0.hat, 0, obj@T_0, main="95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
+curve(Lambda_0.hat, 0, obj@T_0, 
+      main="95% Pointwise C.B. of 
+      Cumulative Intensity Function of Recurrent Process")
 Lambda_0.hat.var <- r2.boot$Lambda_0.hat.var
 Lambda_0.hat.upper <- function(x) {
   Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
@@ -155,7 +166,10 @@ curve(Lambda_0.hat.lower, col = 3, add = TRUE, lty = 2)
 legend('bottomright', c("bootstrap"), lty = 2, col = 3)
 
 library(plotrix)
-plotCI(seq_along(r2$gamma.bar.hat) + 0.1, r2$gamma.bar.hat, uiw=qnorm(0.975) * sqrt(diag(r2.boot$gamma.bar.hat.var)), col=3, main = "95% C.I. of regression parameter")
+plotCI(seq_along(r2$gamma.bar.hat) + 0.1, 
+       r2$gamma.bar.hat, 
+       uiw=qnorm(0.975) * sqrt(diag(r2.boot$gamma.bar.hat.var)), 
+       col=3, main = "95% C.I. of regression parameter")
 legend('bottomright', c("bootstrap"), col = 3, lty = 1)
 
 H_0.hat <- r2$H0.hat
@@ -172,7 +186,9 @@ H_0.hat.lower <- function(x) {
 curve(H_0.hat.lower, col = 3, add = TRUE, lty = 2)
 
 library(plotrix)
-plotCI(seq_along(r2$alpha.hat), r2$alpha.hat, uiw=qnorm(0.975) * sqrt(diag(r2.boot$alpha.hat.var)), main = "95% C.I. of alpha")
+plotCI(seq_along(r2$alpha.hat), 
+       r2$alpha.hat, uiw=qnorm(0.975) * sqrt(diag(r2.boot$alpha.hat.var)), 
+       main = "95% C.I. of alpha")
 @
 
 \subsection[Huang2010]{\cite{Huang2010}}
@@ -205,11 +221,14 @@ names(r3)
 par.hat <- c(r3$beta.hat, r3$gamma.hat)
 par.sd <- c(sqrt(r3$beta.hat.var), sqrt(diag(r3$gamma.hat.var)))
 plotCI(seq_along(par.hat), par.hat, uiw = qnorm(0.975) * par.sd, xaxt='n')
-axis(side=1, at = 1:3, labels=c(expression(beta), expression(gamma[1]), expression(gamma[2])))
+axis(side=1, at = 1:3, labels=c(expression(beta), 
+                                expression(gamma[1]), expression(gamma[2])))
 title(main = "95% C.I. of regression parameter")
 
 Lambda_0.hat <- r3$Lambda_0.hat
-curve(Lambda_0.hat, 0, Huang2010Demo@T_0, main="95% Pointwise C.B. of Cumulative Intensity Function of Recurrent Process")
+curve(Lambda_0.hat, 0, Huang2010Demo@T_0, 
+      main="95% Pointwise C.B. of 
+      Cumulative Intensity Function of Recurrent Process")
 Lambda_0.hat.var <- r3$Lambda_0.hat.var
 Lambda_0.hat.upper <- function(x) {
   Lambda_0.hat(x) + qnorm(0.975) * sqrt(Lambda_0.hat.var(x))
