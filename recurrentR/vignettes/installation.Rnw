@@ -2,9 +2,9 @@
 \label{sec:installation}
 \addcontentsline{toc}{section}{\thesection. Installation}
 
-The \pkg{recurrentR} depends on the \pkg{Rcpp} and the \pkg{nleqslv}. Please install them before the installation of \pkg{recurrentR}.
+The \pkg{recurrentR} depends on both \pkg{Rcpp} and \pkg{nleqslv} packages. Please install them before the installation of \pkg{recurrentR}. 
 
-One can install \pkg{recurrentR} from github at
+One can install \pkg{recurrentR} directly from github at
 \url{https://github.com/wush978/recurrentR}, and
 the intallation can be done with the following commands
 <<install-github, eval=FALSE, tidy=FALSE>>=
